@@ -328,12 +328,6 @@ export default function WelcomePage() {
                 </div>
             </section>
 
-            {/* Mobile-only: chart wheel sits in its own full-width cream section
-                so it doesn't float orphaned on the green canvas. */}
-            <section className="lg:hidden bg-vastu-cream py-20 flex justify-center px-6">
-                <AstrologyChartWheel size={300} color="#2d3c38" />
-            </section>
-
             {/* Content Sections Below the Fold */}
             <section className="max-w-5xl mx-auto px-6 py-16 space-y-12">
 
