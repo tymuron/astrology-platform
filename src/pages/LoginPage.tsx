@@ -76,7 +76,7 @@ export default function LoginPage() {
                     <div className="w-24 h-24 mx-auto mb-6 relative">
                         <img src="/logo.png" alt="Academy" className="w-[96px] h-[96px] mx-auto object-contain drop-shadow-xl" />
                     </div>
-                    <h1 className="text-3xl font-serif tracking-[0.15em] text-vastu-dark">HOLISTIC VEDIC ASTROLOGY</h1>
+                    <h1 className="text-3xl font-serif tracking-[0.15em] text-vastu-dark">GANZHEITLICHE VEDISCHE ASTROLOGIE</h1>
                     <p className="font-script text-vastu-gold text-xl mt-1">Ausbildung</p>
                 </div>
 

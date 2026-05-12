@@ -43,7 +43,7 @@ export default function TeacherLayout() {
                     <Link to="/teacher" className="flex items-center gap-3 group">
                         <img src="/logo.png" alt="Academy" className="w-12 h-12 object-contain transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-lg drop-shadow-md" />
                         <div className="flex flex-col">
-                            <span className="font-serif text-[17px] tracking-[0.10em] text-vastu-dark leading-none">HOLISTIC VEDIC ASTROLOGY</span>
+                            <span className="font-serif text-[17px] tracking-[0.10em] text-vastu-dark leading-none">GANZHEITLICHE VEDISCHE ASTROLOGIE</span>
                             <span className="font-script text-vastu-dark/70 text-sm mt-1">Admin</span>
                         </div>
                     </Link>
@@ -83,7 +83,7 @@ export default function TeacherLayout() {
                 <div className="flex items-center gap-2">
                     <img src="/logo.png" alt="Academy" className="w-10 h-10 object-contain drop-shadow-sm" />
                     <div className="flex flex-col">
-                        <span className="font-serif text-[15px] tracking-[0.10em] text-vastu-dark leading-none">HOLISTIC VEDIC ASTROLOGY</span>
+                        <span className="font-serif text-[15px] tracking-[0.10em] text-vastu-dark leading-none">GANZHEITLICHE VEDISCHE ASTROLOGIE</span>
                         <span className="font-script text-vastu-dark/70 text-xs">Admin</span>
                     </div>
                 </div>

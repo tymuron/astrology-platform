@@ -7,6 +7,21 @@
 create extension if not exists "uuid-ossp";
 
 -- ==========================================================================
+-- 0. SCHEMA GRANTS
+-- DROP SCHEMA public CASCADE wipes the Supabase default grants for the
+-- anon / authenticated / service_role roles. Re-grant them here so the
+-- PostgREST API can reach our tables (RLS still gates which rows each
+-- role sees per policy).
+-- ==========================================================================
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables    in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines  in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables    to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on routines  to anon, authenticated, service_role;
+
+-- ==========================================================================
 -- 1. PROFILES
 -- ==========================================================================
 create table if not exists public.profiles (
@@ -596,3 +611,11 @@ drop policy if exists "Authenticated can delete from buckets" on storage.objects
 create policy "Authenticated can delete from buckets"
   on storage.objects for delete to authenticated
   using (bucket_id in ('avatars', 'course-content', 'library_files'));
+
+-- ==========================================================================
+-- 16. RE-GRANT (catch any tables/functions created above)
+-- Repeat the grants AFTER the tables exist so they actually get applied.
+-- ==========================================================================
+grant all on all tables    in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines  in schema public to anon, authenticated, service_role;

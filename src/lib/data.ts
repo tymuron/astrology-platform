@@ -18,7 +18,7 @@ export const MOCK_USER_TEACHER: User = {
 
 export const COURSE_DATA: Course = {
     id: 'vastulogie-2026',
-    title: 'Holistic Vedic Astrology',
+    title: 'Ganzheitliche Vedische Astrologie',
     modules: [
         {
             id: 'pre',

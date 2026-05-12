@@ -71,7 +71,7 @@ export default function WelcomePage() {
                     <Link to="/student/welcome" className="flex items-center gap-4">
                         <img src="/logo.png" alt="Academy" className="w-12 h-12 object-contain drop-shadow-md" />
                         <div className="flex flex-col">
-                            <span className="font-serif text-sm tracking-[0.12em] text-vastu-dark leading-none">HOLISTIC VEDIC ASTROLOGY</span>
+                            <span className="font-serif text-sm tracking-[0.12em] text-vastu-dark leading-none">GANZHEITLICHE VEDISCHE ASTROLOGIE</span>
                             <span className="font-script text-vastu-gold text-xs">Ausbildung</span>
                         </div>
                     </Link>
@@ -101,7 +101,7 @@ export default function WelcomePage() {
                 <div className="relative z-10 text-center text-white px-6 max-w-3xl mx-auto">
                     <p className="font-script text-vastu-gold text-3xl md:text-5xl mb-4 animate-fade-in">Willkommen, {displayName}</p>
                     <h1 className="text-5xl md:text-8xl font-serif tracking-[0.12em] mb-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                        HOLISTIC VEDIC ASTROLOGY
+                        GANZHEITLICHE VEDISCHE ASTROLOGIE
                     </h1>
                     <p className="font-script text-vastu-gold/80 text-xl md:text-2xl mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>Ausbildung 2026</p>
 
@@ -113,8 +113,8 @@ export default function WelcomePage() {
                     </div>
 
                     <p className="text-white/60 font-body text-lg md:text-xl leading-relaxed mb-10 max-w-xl mx-auto animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                        Dein Weg zu einem harmonischen Zuhause beginnt hier. Entdecke die Kraft von Vastu
-                        und verwandle dein Leben durch bewusstes Raumdesign.
+                        Deine Reise durch die Sterne beginnt hier. Entdecke die Weisheit der vedischen
+                        Astrologie und führe sie zurück in dein Leben.
                     </p>
 
                     {/* CTA */}
@@ -171,95 +171,15 @@ export default function WelcomePage() {
 
                 {/* Info Grid */}
                 <div className="grid md:grid-cols-2 gap-6">
-                    {/* Schedule — Timeline with module details */}
+                    {/* Schedule placeholder — Phase 2 will fill from per-wave course_settings.calendar_events */}
                     <div className="bg-white rounded-2xl shadow-sm border border-vastu-sand/50 p-6 md:p-8">
                         <h3 className="font-serif text-xl text-vastu-dark mb-2 flex items-center gap-2">
                             <Calendar className="text-vastu-gold" size={20} />
-                            Unsere Treffen
+                            Bevorstehende Termine
                         </h3>
-                        <p className="text-vastu-text-light font-body text-sm mb-5">Mittwochs um 9 Uhr [inkl. Aufzeichnung]</p>
-
-                        <div className="relative pl-6 space-y-1">
-                            <div className="absolute left-[9px] top-2 bottom-2 w-px bg-vastu-sand" />
-                            {[
-                                {
-                                    label: 'Modul 1: Vastu Karte, Elemente, Reinigung & Energien',
-                                    date: '20.03',
-                                    note: 'Ausnahme: Freitag',
-                                    active: true,
-                                    topics: ['1.1 Vastu Karte & Elemente', '1.2 Energetische Reinigung', '1.3 Experimente mit den Elementen', '1.4 Innere & Äußere Energien'],
-                                },
-                                {
-                                    label: 'Modul 2: Planeten, Charaktere, Sektoren, Yantren',
-                                    date: '25.03',
-                                    topics: ['2.1 Planeten, Charaktere, Sektoren, Yantren'],
-                                },
-                                {
-                                    label: 'Modul 3: Räume im Detail',
-                                    date: '01.04',
-                                    topics: ['3.1 Schlafzimmer, Arbeitszimmer, Küche & andere Zimmer', '3.2 Toilette & Badezimmer'],
-                                },
-                                {
-                                    label: 'Modul 4: Eingangstür, Berufung & Spiegel',
-                                    date: '08.04',
-                                    topics: ['4.1 Eingangstür & Berufung', '4.2 Spiegel'],
-                                },
-                                {
-                                    label: 'Modul 5: Vastu Design',
-                                    date: '15.04',
-                                    topics: ['5.1 Vastu Design für jeden Sektor & alle Räume'],
-                                },
-                                {
-                                    label: 'Modul 6: Vastu Coaching',
-                                    date: '22.04',
-                                },
-                                {
-                                    label: 'Modul 7: Bilder & spezielle Korrekturen',
-                                    date: '29.04',
-                                },
-                            ].map((item, i) => (
-                                <div key={i} className="relative py-2">
-                                    <div className="flex items-start gap-3">
-                                        <div className={`absolute left-[-15px] top-[11px] w-[7px] h-[7px] rounded-full ${item.active ? 'bg-vastu-gold ring-4 ring-vastu-gold/20' : 'bg-vastu-sand'}`} />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="font-sans text-sm font-medium text-vastu-dark">{item.label}</span>
-                                                <span className="text-vastu-text-light font-sans text-xs ml-auto shrink-0">{item.date}</span>
-                                            </div>
-                                            {item.note && (
-                                                <span className="text-xs font-sans text-vastu-gold italic">{item.note}</span>
-                                            )}
-                                            {item.topics && (
-                                                <ul className="mt-1.5 space-y-0.5">
-                                                    {item.topics.map((t, j) => (
-                                                        <li key={j} className="text-xs font-body text-vastu-text-light pl-2 border-l border-vastu-sand/50">{t}</li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Bonus */}
-                            <div className="relative py-2 mt-1 border-t border-vastu-sand/50 pt-3">
-                                <div className={`absolute left-[-15px] top-[17px] w-[7px] h-[7px] rounded-full bg-vastu-sand`} />
-                                <span className="font-sans text-sm font-medium text-vastu-dark">Bonus</span>
-                                <ul className="mt-1.5 space-y-0.5">
-                                    <li className="text-xs font-body text-vastu-text-light pl-2 border-l border-vastu-sand/50">Grundstück nach Vastu</li>
-                                    <li className="text-xs font-body text-vastu-text-light pl-2 border-l border-vastu-sand/50">Haustiere</li>
-                                    <li className="text-xs font-body text-vastu-text-light pl-2 border-l border-vastu-sand/50">Umzug</li>
-                                    <li className="text-xs font-body text-vastu-text-light pl-2 border-l border-vastu-sand/50">Pflanzen</li>
-                                </ul>
-                            </div>
-
-                            {/* Abschlussball */}
-                            <div className="relative flex items-center gap-4 py-2 mt-2 border-t border-vastu-sand/50 pt-3">
-                                <div className="absolute left-[-15px] w-[7px] h-[7px] rounded-full bg-vastu-gold ring-4 ring-vastu-gold/15" />
-                                <span className="font-serif text-sm font-medium text-vastu-dark">✨ Abschlussball</span>
-                                <span className="text-vastu-dark font-sans text-xs font-semibold ml-auto">21.06</span>
-                            </div>
-                        </div>
+                        <p className="text-vastu-text-light font-body text-sm italic">
+                            Termine werden hier angezeigt, sobald deine Mentorin sie eingetragen hat.
+                        </p>
                     </div>
 
                     {/* Quick Links */}
@@ -311,20 +231,22 @@ export default function WelcomePage() {
                             </div>
                         </Link>
 
-                        <a href={settings?.vastu_map_link || "https://www.vastusphere.net"} target="_blank" rel="noopener noreferrer"
-                            className="block bg-vastu-dark grain-overlay rounded-2xl shadow-lg shadow-vastu-dark/15 p-5 hover:shadow-xl transition-all group text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-40 h-40 bg-vastu-gold opacity-10 rounded-full blur-[60px] translate-x-1/3 -translate-y-1/3" />
-                            <div className="flex items-center gap-4 relative z-10">
-                                <div className="w-[52px] h-[52px] rounded-xl bg-vastu-gold/20 flex items-center justify-center group-hover:bg-vastu-gold/30 transition-colors shrink-0">
-                                    <Map className="text-vastu-gold" size={26} />
+                        {settings?.vastu_map_link && settings.vastu_map_link.trim() !== '' && (
+                            <a href={settings.vastu_map_link} target="_blank" rel="noopener noreferrer"
+                                className="block bg-vastu-dark grain-overlay rounded-2xl shadow-lg shadow-vastu-dark/15 p-5 hover:shadow-xl transition-all group text-white relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-vastu-gold opacity-10 rounded-full blur-[60px] translate-x-1/3 -translate-y-1/3" />
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <div className="w-[52px] h-[52px] rounded-xl bg-vastu-gold/20 flex items-center justify-center group-hover:bg-vastu-gold/30 transition-colors shrink-0">
+                                        <Map className="text-vastu-gold" size={26} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-serif text-lg text-vastu-gold">Externes Tool</h4>
+                                        <p className="text-white/50 font-body text-sm">In neuem Tab öffnen</p>
+                                    </div>
+                                    <ExternalLink className="text-vastu-gold/50 group-hover:text-vastu-gold transition-colors" size={20} />
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className="font-serif text-lg text-vastu-gold">Vastu Karte erstellen</h4>
-                                    <p className="text-white/50 font-body text-sm">Erstelle deine persönliche Vastu Karte</p>
-                                </div>
-                                <ExternalLink className="text-vastu-gold/50 group-hover:text-vastu-gold transition-colors" size={20} />
-                            </div>
-                        </a>
+                            </a>
+                        )}
                     </div>
                 </div>
 
@@ -385,7 +307,7 @@ export default function WelcomePage() {
 
             {/* Footer */}
             <footer className="border-t border-vastu-sand/50 py-8 text-center">
-                <p className="text-sm font-sans text-vastu-text-light">© 2026 Holistic Vedic Astrology · Selbstentdeckung Academy</p>
+                <p className="text-sm font-sans text-vastu-text-light">© 2026 Ganzheitliche Vedische Astrologie · Selbstentdeckung Academy</p>
             </footer>
         </div>
     );
