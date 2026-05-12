@@ -57,6 +57,33 @@ export interface CourseRow {
     order_index: number;
 }
 
+// Phase 2E — per-course welcome page settings.
+export interface UsefulLink {
+    label: string;
+    url: string;
+}
+
+export interface CalendarEvent {
+    label: string;
+    datetime: string; // ISO
+    url?: string;
+    description?: string;
+}
+
+export interface CourseSettings {
+    course_id: string;
+    welcome_intro: string | null;
+    welcome_signature: string | null;
+    welcome_video_url: string | null;
+    zoom_link: string | null;
+    telegram_link: string | null;
+    external_tool_label: string | null;
+    external_tool_url: string | null;
+    useful_links: UsefulLink[];
+    calendar_events: CalendarEvent[];
+    updated_at: string;
+}
+
 export interface LiveStream {
     id: string;
     title: string;
