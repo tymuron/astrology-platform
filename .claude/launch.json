@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vastu-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5173"],
+      "port": 5173
+    },
+    {
+      "name": "astrology-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "/Users/tymurchystiakov/antigravity-workspace/scratch/astrology-platform",
+        "--",
+        "--port",
+        "5174"
+      ],
+      "port": 5174
+    }
+  ]
+}

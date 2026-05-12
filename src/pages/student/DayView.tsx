@@ -1,0 +1,371 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Download, FileText, Video, File, ChevronRight, ChevronLeft, Loader2, Youtube, ArrowLeft } from 'lucide-react';
+import { useModules, useLektion } from '../../hooks/useCourse';
+import { Module, Lektion, Material } from '../../lib/types';
+import { getVideoEmbedUrl, cn, navigateBackOr } from '../../lib/utils';
+import { sanitizeHtml } from '../../lib/sanitize';
+
+// Helper component for dual video player (reused logic)
+const VideoPlayer = ({ youtubeUrl, rutubeUrl, title }: { youtubeUrl?: string, rutubeUrl?: string, title: string }) => {
+    const [activeSource, setActiveSource] = useState<'youtube' | 'rutube'>(youtubeUrl ? 'youtube' : 'rutube');
+
+    // If only one source exists, force that source
+    useEffect(() => {
+        if (youtubeUrl && !rutubeUrl) setActiveSource('youtube');
+        if (!youtubeUrl && rutubeUrl) setActiveSource('rutube');
+    }, [youtubeUrl, rutubeUrl]);
+
+    const currentUrl = activeSource === 'youtube' ? youtubeUrl : rutubeUrl;
+
+    return (
+        <div className="space-y-4">
+            {/* Source Switcher */}
+            {(youtubeUrl && rutubeUrl) && (
+                <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
+                    <button
+                        onClick={() => setActiveSource('youtube')}
+                        className={cn(
+                            "px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2",
+                            activeSource === 'youtube'
+                                ? "bg-white text-red-600 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                        )}
+                    >
+                        <Youtube size={16} />
+                        YouTube
+                    </button>
+                    <button
+                        onClick={() => setActiveSource('rutube')}
+                        className={cn(
+                            "px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2",
+                            activeSource === 'rutube'
+                                ? "bg-white text-[#00A551] shadow-sm" // Rutube green color
+                                : "text-gray-500 hover:text-gray-700"
+                        )}
+                    >
+                        <Video size={16} />
+                        Rutube
+                    </button>
+                </div>
+            )}
+
+            {/* Player */}
+            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-lg relative group">
+                {currentUrl ? (
+                    <iframe
+                        src={getVideoEmbedUrl(currentUrl)}
+                        className="w-full h-full"
+                        title={title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    />
+                ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/50">
+                        <Video size={48} />
+                        <span className="ml-2">Video nicht verfügbar</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default function DayView() {
+    const { weekId, dayId } = useParams();
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const navigate = useNavigate();
+
+    // We need modules to find prev/next lektion
+    const { modules } = useModules();
+    const { lektion, loading } = useLektion(weekId, dayId);
+
+    const currentModule = modules.find((m: Module) => m.id === weekId);
+
+    if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-vastu-gold" size={40} /></div>;
+    if (!currentModule || !lektion) return <div>Lektion nicht gefunden</div>;
+
+    const lektionIndex = currentModule.lektionen.findIndex((l: Lektion) => l.id === dayId);
+    const prevLektion = currentModule.lektionen[lektionIndex - 1];
+    const nextLektion = currentModule.lektionen[lektionIndex + 1];
+
+    const getIconForType = (type: string) => {
+        switch (type) {
+            case 'video': return <Video size={18} />;
+            case 'pdf': return <FileText size={18} />;
+            default: return <File size={18} />;
+        }
+    };
+
+    const isDownloadable = (type: string) => {
+        return ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar', 'file', 'ppt', 'pptx'].includes(type.toLowerCase());
+    };
+
+    const handleDownload = async (e: React.MouseEvent, material: Material) => {
+        e.preventDefault();
+        if (downloadingId) return;
+
+        setDownloadingId(material.id);
+
+        try {
+            const response = await fetch(material.url);
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            let filename = material.title;
+            if (!filename.toLowerCase().endsWith(`.${material.type}`)) {
+                filename += `.${material.type}`;
+            }
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Download error:', error);
+            window.open(material.url, '_blank');
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto animate-fade-in">
+            {/* Back Navigation */}
+            <button
+                onClick={() => navigateBackOr(navigate, '/student')}
+                className="inline-flex items-center gap-2 text-vastu-text-light hover:text-vastu-dark transition-colors group text-sm font-sans mb-6"
+            >
+                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                <span>Zurück</span>
+            </button>
+
+            {/* Breadcrumbs */}
+            <div className="flex items-center gap-2 text-sm text-vastu-text-light mb-6">
+                <Link to="/student" className="hover:text-vastu-gold">Kurs</Link>
+                <ChevronRight size={14} />
+                <Link to={`/student?week=${currentModule.id}`} className="hover:text-vastu-gold">{currentModule.title}</Link>
+                <ChevronRight size={14} />
+                <span className="text-vastu-dark font-medium truncate">{lektion.title}</span>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+                {/* Main Content (Video + Info) */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Video Player */}
+                    <VideoPlayer
+                        youtubeUrl={lektion.vimeoUrl}
+                        title={lektion.title}
+                    />
+
+                    <div>
+                        <h1 className="text-3xl font-serif text-vastu-dark mb-4">{lektion.title}</h1>
+                        <div
+                            className="text-vastu-text-light leading-relaxed text-base font-light prose prose-stone max-w-none [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 [&>p]:mb-4"
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(lektion.description || '') }}
+                        />
+                    </div>
+                </div>
+
+                {/* Sidebar (Materials & Navigation) */}
+                <div className="space-y-6">
+                    {/* Navigation Card */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 className="font-serif text-lg mb-4 text-vastu-dark">Navigation</h3>
+
+                        <div className="space-y-3">
+                            {prevLektion && (
+                                <Link
+                                    to={`/student/week/${currentModule.id}/day/${prevLektion.id}`}
+                                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-vastu-dark transition-colors text-sm group"
+                                >
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                        <ChevronLeft size={16} className="text-vastu-gold flex-shrink-0" />
+                                        <div className="text-left overflow-hidden">
+                                            <div className="text-xs text-vastu-text-light">Vorherige Lektion</div>
+                                            <div className="font-medium truncate">{prevLektion.title}</div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            )}
+                            {nextLektion ? (
+                                <Link
+                                    to={`/student/week/${currentModule.id}/day/${nextLektion.id}`}
+                                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-vastu-dark text-vastu-light hover:bg-vastu-dark/90 transition-colors text-sm"
+                                >
+                                    <div className="text-left overflow-hidden">
+                                        <div className="text-xs text-white/50">Nächste Lektion</div>
+                                        <div className="font-medium truncate">{nextLektion.title}</div>
+                                    </div>
+                                    <ChevronRight size={16} className="text-vastu-gold flex-shrink-0" />
+                                </Link>
+                            ) : (
+                                <div className="space-y-3">
+                                    {/* Next Module Button */}
+                                    {modules[modules.findIndex((m: Module) => m.id === currentModule.id) + 1] ? (
+                                        (() => {
+                                            const nextModule = modules[modules.findIndex((m: Module) => m.id === currentModule.id) + 1];
+                                            return (
+                                                <Link
+                                                    to={nextModule.isLocked ? '#' : `/student?week=${nextModule.id}`}
+                                                    className={`flex items-center justify-between gap-3 p-3 rounded-lg text-sm w-full transition-colors ${nextModule.isLocked
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-vastu-gold text-vastu-dark hover:bg-vastu-gold/90'
+                                                        }`}
+                                                    onClick={(e) => nextModule.isLocked && e.preventDefault()}
+                                                >
+                                                    <div className="text-left overflow-hidden">
+                                                        <div className={`text-xs ${nextModule.isLocked ? 'text-gray-400' : 'text-vastu-dark/70'}`}>Nächstes Modul</div>
+                                                        <div className="font-medium truncate">{nextModule.title}</div>
+                                                    </div>
+                                                    <ChevronRight size={16} className="flex-shrink-0" />
+                                                </Link>
+                                            );
+                                        })()
+                                    ) : (
+                                        <Link
+                                            to="/student"
+                                            className="flex items-center justify-between gap-3 p-3 rounded-lg border border-vastu-gold/30 text-vastu-dark hover:bg-vastu-gold/10 transition-colors text-sm"
+                                        >
+                                            <div className="text-left">
+                                                <div className="text-xs text-vastu-text-light">Kurs abgeschlossen</div>
+                                                <div className="font-medium">Zurück zum Programm</div>
+                                            </div>
+                                            <ChevronRight size={16} className="text-vastu-gold" />
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Materials Card */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-serif text-lg text-vastu-dark">Materialien</h3>
+                            <span className="text-xs bg-vastu-light px-2 py-1 rounded-full text-vastu-text-light">
+                                {lektion.materials.filter((m: Material) => !m.isHomework).length} Dateien
+                            </span>
+                        </div>
+
+                        <div className="space-y-3">
+                            {lektion.materials.filter((m: Material) => !m.isHomework).length > 0 ? (
+                                lektion.materials.filter((m: Material) => !m.isHomework).map((material: Material) => (
+                                    <div
+                                        key={material.id}
+                                        className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-vastu-gold/50 hover:bg-vastu-light/30 transition-all group"
+                                    >
+                                        <a
+                                            href={material.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex-1 flex items-center gap-3 min-w-0"
+                                        >
+                                            <div className="w-8 h-8 rounded bg-vastu-light flex items-center justify-center text-vastu-text-light group-hover:text-vastu-gold transition-colors">
+                                                {getIconForType(material.type)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-medium text-vastu-dark truncate">{material.title}</div>
+                                                <div className="text-xs text-vastu-text-light uppercase">{material.type}</div>
+                                            </div>
+                                        </a>
+                                        {isDownloadable(material.type) && (
+                                            <button
+                                                onClick={(e) => handleDownload(e, material)}
+                                                disabled={downloadingId === material.id}
+                                                className="p-2 -mr-2 text-gray-300 hover:text-vastu-gold transition-colors disabled:opacity-50"
+                                                title="Datei herunterladen"
+                                            >
+                                                {downloadingId === material.id ? (
+                                                    <Loader2 size={16} className="animate-spin text-vastu-gold" />
+                                                ) : (
+                                                    <Download size={16} />
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-sm text-vastu-text-light italic">
+                                    Keine Materialien für diese Lektion
+                                </div>
+                            )}
+                        </div>
+
+                        {lektion.materials.length > 1 && (
+                            <button
+                                onClick={() => alert('Die Funktion "Alles als ZIP herunterladen" wird bald verfügbar sein.')}
+                                className="w-full mt-4 py-2 text-sm text-vastu-gold hover:text-vastu-dark border border-vastu-gold/30 hover:border-vastu-dark rounded-lg transition-all"
+                            >
+                                Alles herunterladen (ZIP)
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Homework Card */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 className="font-serif text-lg text-vastu-dark mb-4 flex items-center gap-2">
+                            <FileText size={20} className="text-vastu-gold" />
+                            Hausaufgabe
+                        </h3>
+
+                        {lektion.homeworkDescription ? (
+                            <div className="space-y-4">
+                                <div
+                                    className="text-sm text-vastu-text-light prose prose-sm max-w-none [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 [&>p]:mb-2"
+                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(lektion.homeworkDescription || '') }}
+                                />
+
+                                {lektion.materials.filter((m: Material) => m.isHomework).length > 0 && (
+                                    <div className="space-y-2 pt-2 border-t border-gray-100">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Aufgaben-Dateien:</h4>
+                                        {lektion.materials.filter((m: Material) => m.isHomework).map((material: Material) => (
+                                            <div
+                                                key={material.id}
+                                                className="flex items-center gap-2 p-2 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors group"
+                                            >
+                                                <a
+                                                    href={material.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="flex-1 flex items-center gap-2 min-w-0"
+                                                >
+                                                    <FileText size={14} className="text-orange-500" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-sm font-medium text-orange-900 truncate">{material.title}</div>
+                                                    </div>
+                                                </a>
+                                                {isDownloadable(material.type) && (
+                                                    <button
+                                                        onClick={(e) => handleDownload(e, material)}
+                                                        disabled={downloadingId === material.id}
+                                                        className="p-1 -mr-1 text-orange-300 hover:text-orange-600 disabled:opacity-50"
+                                                        title="Datei herunterladen"
+                                                    >
+                                                        {downloadingId === material.id ? (
+                                                            <Loader2 size={14} className="animate-spin text-orange-500" />
+                                                        ) : (
+                                                            <Download size={14} />
+                                                        )}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-vastu-text-light mb-4">
+                                Keine Hausaufgabe für diese Lektion.
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

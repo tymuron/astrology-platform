@@ -1,0 +1,351 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #7a604a;
+  --color-primary-deep: #5a4035;
+  --color-accent: #c4b7b3;
+  --color-gold: #d4b896;
+  --color-light: #faf8f6;
+  --color-cream: #f3eeea;
+  --color-sand: #e8ddd4;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Cormorant', serif;
+  font-size: 17px;
+  color: #2A2A2A;
+  background-color: var(--color-light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Utility: small UI text uses Inter */
+.ui-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════════
+   DECORATIVE ELEMENTS
+   ═══════════════════════════════════════════════ */
+
+/* Ornamental divider */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.ornament-divider::before,
+.ornament-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+}
+
+.ornament-divider span {
+  color: var(--color-gold);
+  font-size: 18px;
+}
+
+/* Gold accent line (left border) */
+.accent-bar-left {
+  border-left: 3px solid var(--color-gold);
+  padding-left: 16px;
+}
+
+/* Grain texture overlay for headers */
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Lotus watermark for sidebar */
+.lotus-watermark {
+  position: relative;
+  overflow: hidden;
+}
+
+.lotus-watermark::before {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  right: -30px;
+  width: 200px;
+  height: 200px;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 10 C50 10 65 30 65 50 C65 70 50 85 50 85 C50 85 35 70 35 50 C35 30 50 10 50 10Z' fill='%23ffffff'/%3E%3Cpath d='M50 15 C50 15 80 35 80 55 C80 75 50 90 50 90' fill='none' stroke='%23ffffff' stroke-width='0.5'/%3E%3Cpath d='M50 15 C50 15 20 35 20 55 C20 75 50 90 50 90' fill='none' stroke='%23ffffff' stroke-width='0.5'/%3E%3Cpath d='M50 5 C50 5 75 25 75 50 C75 75 50 95 50 95 C50 95 25 75 25 50 C25 25 50 5 50 5Z' fill='none' stroke='%23ffffff' stroke-width='0.3'/%3E%3Ccircle cx='50' cy='50' r='8' fill='none' stroke='%23ffffff' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+}
+
+/* Frosted glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(122, 96, 74, 0.08);
+}
+
+/* Module number background badge */
+.module-number-bg {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  font-family: 'Playfair Display', serif;
+  font-size: 120px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.06);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Glowing progress bar */
+.progress-glow {
+  position: relative;
+}
+
+.progress-glow::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  bottom: -2px;
+  left: -2px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+  border-radius: inherit;
+  opacity: 0;
+  animation: glow 2s ease-in-out infinite;
+  z-index: -1;
+}
+
+.progress-glow.active::after {
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-sand);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+/* Sidebar scrollbar */
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════════
+   VIMEO EMBED
+   ═══════════════════════════════════════════════ */
+
+.vimeo-wrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+}
+
+.vimeo-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   CUSTOM CHECKBOX
+   ═══════════════════════════════════════════════ */
+
+.lesson-check {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-sand);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lesson-check:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.lesson-check:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.lesson-check:hover {
+  border-color: var(--color-gold);
+}
+
+/* ═══════════════════════════════════════════════
+   PDF CARD + ANIMATIONS
+   ═══════════════════════════════════════════════ */
+
+.pdf-card {
+  transition: all 0.2s ease;
+}
+
+.pdf-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(122, 96, 74, 0.12);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes celebratePop {
+  0% {
+    transform: scale(1);
+  }
+
+  30% {
+    transform: scale(1.08);
+  }
+
+  60% {
+    transform: scale(0.96);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-stagger>* {
+  animation: fadeInUp 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-stagger>*:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.animate-stagger>*:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.animate-stagger>*:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.animate-stagger>*:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.animate-stagger>*:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.animate-stagger>*:nth-child(6) {
+  animation-delay: 0.3s;
+}
+
+.animate-stagger>*:nth-child(7) {
+  animation-delay: 0.35s;
+}
+
+.animate-stagger>*:nth-child(8) {
+  animation-delay: 0.4s;
+}
+
+.animate-stagger>*:nth-child(9) {
+  animation-delay: 0.45s;
+}
+
+.animate-stagger>*:nth-child(10) {
+  animation-delay: 0.5s;
+}
+
+.animate-celebrate {
+  animation: celebratePop 0.4s ease-out;
+}
