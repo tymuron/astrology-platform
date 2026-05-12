@@ -3,6 +3,20 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserRole } from '../lib/types';
 
+const PENDING_INVITE_KEY = 'astrology.pendingInvite';
+
+async function tryRedeemPendingInvite() {
+    if (typeof localStorage === 'undefined') return;
+    const token = localStorage.getItem(PENDING_INVITE_KEY);
+    if (!token) return;
+    const { error } = await supabase.rpc('redeem_invite', { invite_token: token });
+    if (!error) {
+        localStorage.removeItem(PENDING_INVITE_KEY);
+    } else {
+        console.warn('Pending invite redemption failed:', error.message);
+    }
+}
+
 interface AuthContextType {
     user: User | null;
     session: Session | null;
@@ -72,10 +86,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        } = supabase.auth.onAuthStateChange((event, session) => {
             setSession(session);
             if (session?.user) {
                 setUser(session.user);
+                if (event === 'SIGNED_IN') {
+                    tryRedeemPendingInvite();
+                }
                 fetchUserRole(session.user.id);
             } else {
                 setUser(null);
