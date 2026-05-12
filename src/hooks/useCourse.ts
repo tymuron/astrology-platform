@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Module, Lektion } from '../lib/types';
 import { COURSE_DATA } from '../lib/data';
+import { useCourseContext } from '../contexts/CourseContext';
 
 export function useModules() {
+    const { activeCourseId } = useCourseContext();
     const [modules, setModules] = useState<Module[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -23,9 +25,17 @@ export function useModules() {
                     return;
                 }
 
+                // Without an active course we can't render anything wave-specific.
+                if (!activeCourseId) {
+                    setModules([]);
+                    setLoading(false);
+                    return;
+                }
+
                 const { data, error } = await supabase
                     .from('weeks')
                     .select(`*, days (*), materials (*)`)
+                    .eq('course_id', activeCourseId)
                     .order('order_index', { ascending: true });
 
                 if (error) throw error;
@@ -95,7 +105,7 @@ export function useModules() {
         }
 
         fetchModules();
-    }, []);
+    }, [activeCourseId]);
 
     return { modules, loading, error };
 }
