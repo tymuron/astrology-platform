@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getVideoEmbedUrl, navigateBackOr } from '../../lib/utils';
 import VimeoPlayer from '../../components/VimeoPlayer';
+import { AstrologyChartWheel, StarMark } from '../../components/AstrologyChartWheel';
 import { CalendarEvent, CourseSettings, UsefulLink } from '../../lib/types';
 
 function formatEventDate(iso: string): string {
@@ -118,48 +119,219 @@ export default function WelcomePage() {
                 </div>
             </nav>
 
-            {/* Hero — Full-screen */}
-            <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-16">
-                <div className="absolute inset-0 bg-vastu-dark-deep" />
-                <div className="absolute inset-0 grain-overlay opacity-30" />
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-vastu-gold/8 rounded-full blur-[150px] translate-x-1/4 -translate-y-1/4" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-vastu-accent/5 rounded-full blur-[120px] -translate-x-1/4 translate-y-1/4" />
+            {/* Hero — Editorial split (adapted from the Claude Design handoff) */}
+            <section className="relative min-h-screen overflow-hidden bg-vastu-dark pt-16">
+                {/* Right cream panel with diagonal slice */}
+                <div
+                    className="hidden lg:block absolute top-0 bottom-0 right-0 bg-vastu-cream"
+                    style={{ width: '46%', clipPath: 'polygon(12% 0, 100% 0, 100% 100%, 0 100%)' }}
+                />
 
-                <div className="relative z-10 text-center text-white px-6 max-w-3xl mx-auto">
-                    <p className="font-script text-vastu-gold text-3xl md:text-5xl mb-4 animate-fade-in">Willkommen, {displayName}</p>
-                    <h1 className="text-5xl md:text-8xl font-serif tracking-[0.12em] mb-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                        GANZHEITLICHE VEDISCHE ASTROLOGIE
-                    </h1>
-                    <p className="font-script text-vastu-gold/80 text-xl md:text-2xl mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                        {activeCourse?.title || 'Selbstentdeckung Academy'}
-                    </p>
+                {/* Decorative dashed orbit ring behind the wheel */}
+                <div
+                    className="hidden lg:block absolute pointer-events-none rounded-full border border-dashed border-vastu-dark/25"
+                    style={{
+                        right: '-120px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: '760px',
+                        height: '760px',
+                    }}
+                />
 
-                    <div className="flex items-center justify-center gap-4 mb-8 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                        <div className="w-20 h-px bg-gradient-to-r from-transparent to-vastu-gold/50" />
-                        <Star size={14} className="text-vastu-gold/70" />
-                        <div className="w-20 h-px bg-gradient-to-l from-transparent to-vastu-gold/50" />
+                {/* Chart wheel inside cream panel (desktop) */}
+                <div
+                    className="hidden lg:block absolute"
+                    style={{ right: '60px', top: '50%', transform: 'translateY(-50%)' }}
+                >
+                    <AstrologyChartWheel size={560} color="#2d3c38" />
+                </div>
+
+                {/* Subtle ambient blurs to soften the green canvas */}
+                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-vastu-gold/8 rounded-full blur-[150px] -translate-x-1/4 -translate-y-1/4" />
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-vastu-accent/5 rounded-full blur-[120px] -translate-x-1/3 translate-y-1/4" />
+
+                {/* LEFT type column */}
+                <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-20 lg:py-28 flex flex-col justify-center min-h-[calc(100vh-4rem)] lg:w-[60%] lg:ml-0">
+                    {/* Eyebrow */}
+                    <div className="flex items-center gap-4 mb-8 animate-fade-in">
+                        <span className="block h-px w-9 bg-vastu-gold" />
+                        <span
+                            className="text-vastu-gold"
+                            style={{ fontSize: '11px', letterSpacing: '0.32em', textTransform: 'uppercase' }}
+                        >
+                            {activeCourse?.title || 'Selbstentdeckung Academy'}
+                        </span>
                     </div>
 
-                    <p className="text-white/60 font-body text-lg md:text-xl leading-relaxed mb-10 max-w-xl mx-auto animate-fade-in whitespace-pre-line" style={{ animationDelay: '0.4s' }}>
+                    {/* Italic greeting */}
+                    <div
+                        className="text-vastu-gold mb-4 animate-fade-in"
+                        style={{
+                            fontFamily: "'Cormorant Garamond', serif",
+                            fontStyle: 'italic',
+                            fontWeight: 300,
+                            fontSize: 'clamp(22px, 2.6vw, 34px)',
+                            animationDelay: '0.05s',
+                        }}
+                    >
+                        Willkommen zurück, {displayName}.
+                    </div>
+
+                    {/* Title — three lines, middle word italic gold */}
+                    <h1
+                        className="text-vastu-cream m-0 animate-fade-in"
+                        style={{
+                            fontFamily: "'Italiana', 'Cormorant Upright', serif",
+                            fontWeight: 400,
+                            fontSize: 'clamp(48px, 8vw, 108px)',
+                            lineHeight: 0.95,
+                            letterSpacing: '-0.005em',
+                            animationDelay: '0.1s',
+                        }}
+                    >
+                        Ganzheitliche
+                        <br />
+                        <span
+                            className="text-vastu-gold"
+                            style={{
+                                fontFamily: "'Cormorant Garamond', serif",
+                                fontStyle: 'italic',
+                                fontWeight: 300,
+                            }}
+                        >
+                            Vedische
+                        </span>
+                        <br />
+                        Astrologie
+                    </h1>
+
+                    {/* Paragraph (welcome_intro or default) */}
+                    <p
+                        className="mt-9 animate-fade-in whitespace-pre-line"
+                        style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontWeight: 300,
+                            fontSize: '15px',
+                            lineHeight: 1.7,
+                            color: 'rgba(239, 222, 203, 0.78)',
+                            maxWidth: '440px',
+                            animationDelay: '0.2s',
+                        }}
+                    >
                         {settings?.welcome_intro?.trim() ||
                             'Deine Reise durch die Sterne beginnt hier. Entdecke die Weisheit der vedischen Astrologie und führe sie zurück in dein Leben.'}
                     </p>
 
-                    <Link
-                        to="/student"
-                        className="inline-flex items-center gap-3 bg-vastu-gold text-vastu-dark-deep px-8 py-4 rounded-full font-sans font-semibold text-lg hover:bg-vastu-gold/90 transition-all shadow-xl shadow-black/30 hover:shadow-2xl hover:scale-[1.02] animate-fade-in"
-                        style={{ animationDelay: '0.5s' }}
-                    >
-                        Zum Kurs
-                        <ArrowRight size={20} />
-                    </Link>
+                    {/* CTA buttons */}
+                    <div className="flex flex-wrap gap-4 mt-11 items-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                        <Link
+                            to="/student"
+                            className="inline-flex items-center gap-3 bg-vastu-gold text-vastu-dark-deep hover:opacity-90 transition-opacity"
+                            style={{
+                                padding: '18px 34px',
+                                borderRadius: '999px',
+                                fontSize: '13px',
+                                letterSpacing: '0.22em',
+                                textTransform: 'uppercase',
+                                fontWeight: 500,
+                            }}
+                        >
+                            Kurs betreten
+                            <ArrowRight size={18} />
+                        </Link>
+                        <button
+                            onClick={() => {
+                                document.getElementById('welcome-info-grid')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="inline-flex items-center text-vastu-cream hover:border-vastu-gold transition-colors"
+                            style={{
+                                padding: '18px 28px',
+                                borderRadius: '999px',
+                                border: '1px solid rgba(239,222,203,0.35)',
+                                background: 'transparent',
+                                fontSize: '13px',
+                                letterSpacing: '0.22em',
+                                textTransform: 'uppercase',
+                                fontWeight: 400,
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Lehrplan ansehen
+                        </button>
+                    </div>
+
+                    {/* Stats meta strip */}
+                    {(modules.length > 0 || totalLessons > 0) && (
+                        <div
+                            className="flex flex-wrap gap-x-12 gap-y-6 mt-16 animate-fade-in"
+                            style={{
+                                fontSize: '11px',
+                                letterSpacing: '0.22em',
+                                textTransform: 'uppercase',
+                                color: 'rgba(239,222,203,0.55)',
+                                animationDelay: '0.4s',
+                            }}
+                        >
+                            <div>
+                                <div
+                                    className="text-vastu-cream mb-1.5"
+                                    style={{
+                                        fontFamily: "'Cormorant Upright', serif",
+                                        fontSize: '28px',
+                                        letterSpacing: '0.04em',
+                                    }}
+                                >
+                                    {modules.length}
+                                </div>
+                                Module
+                            </div>
+                            <div>
+                                <div
+                                    className="text-vastu-cream mb-1.5"
+                                    style={{
+                                        fontFamily: "'Cormorant Upright', serif",
+                                        fontSize: '28px',
+                                        letterSpacing: '0.04em',
+                                    }}
+                                >
+                                    {totalLessons}
+                                </div>
+                                Lektionen
+                            </div>
+                            <div>
+                                <div
+                                    className="text-vastu-cream mb-1.5"
+                                    style={{
+                                        fontFamily: "'Cormorant Upright', serif",
+                                        fontSize: '28px',
+                                        letterSpacing: '0.04em',
+                                    }}
+                                >
+                                    {progressPercent}%
+                                </div>
+                                Fortschritt
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                <div className="absolute bottom-8 inset-x-0 flex justify-center text-white/25 text-xs font-sans animate-fade-in" style={{ animationDelay: '0.8s' }}>
-                    <div className="flex flex-col items-center gap-2">
-                        <span>Zu allen Infos</span>
-                        <div className="w-px h-8 bg-gradient-to-b from-white/20 to-transparent" />
+                {/* Mobile/tablet: render a small chart wheel below the type so the layout doesn't feel empty without the cream panel */}
+                <div className="lg:hidden flex justify-center pb-16 px-6 relative z-10">
+                    <div className="rounded-2xl bg-vastu-cream p-6 inline-block">
+                        <AstrologyChartWheel size={260} color="#2d3c38" />
                     </div>
+                </div>
+
+                {/* Tiny gold stars sprinkled over the green canvas */}
+                <div className="hidden lg:block absolute pointer-events-none" style={{ top: '140px', left: '58%' }}>
+                    <StarMark size={14} color="#C5A97D" />
+                </div>
+                <div className="hidden lg:block absolute pointer-events-none" style={{ bottom: '120px', left: '48%' }}>
+                    <StarMark size={10} color="#C5A97D" style={{ opacity: 0.7 }} />
+                </div>
+                <div className="hidden lg:block absolute pointer-events-none" style={{ top: '68%', left: '54%' }}>
+                    <StarMark size={8} color="#C5A97D" style={{ opacity: 0.55 }} />
                 </div>
             </section>
 
@@ -196,7 +368,7 @@ export default function WelcomePage() {
                 )}
 
                 {/* Info Grid */}
-                <div className="grid md:grid-cols-2 gap-6">
+                <div id="welcome-info-grid" className="grid md:grid-cols-2 gap-6">
                     {/* Calendar — per-wave events */}
                     <div className="bg-white rounded-2xl shadow-sm border border-vastu-sand/50 p-6 md:p-8">
                         <h3 className="font-serif text-xl text-vastu-dark mb-2 flex items-center gap-2">
