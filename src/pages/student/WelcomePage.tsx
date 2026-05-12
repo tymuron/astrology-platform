@@ -120,7 +120,7 @@ export default function WelcomePage() {
             </nav>
 
             {/* Hero — Editorial split (adapted from the Claude Design handoff) */}
-            <section className="relative min-h-screen overflow-hidden bg-vastu-dark pt-16">
+            <section className="relative overflow-hidden bg-vastu-dark pt-16 lg:min-h-screen">
                 {/* Right cream panel with diagonal slice */}
                 <div
                     className="hidden lg:block absolute top-0 bottom-0 right-0 bg-vastu-cream"
@@ -152,7 +152,7 @@ export default function WelcomePage() {
                 <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-vastu-accent/5 rounded-full blur-[120px] -translate-x-1/3 translate-y-1/4" />
 
                 {/* LEFT type column */}
-                <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-20 lg:py-28 flex flex-col justify-center min-h-[calc(100vh-4rem)] lg:w-[60%] lg:ml-0">
+                <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-16 lg:py-28 flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] lg:w-[60%] lg:ml-0">
                     {/* Eyebrow */}
                     <div className="flex items-center gap-4 mb-8 animate-fade-in">
                         <span className="block h-px w-9 bg-vastu-gold" />
@@ -316,13 +316,6 @@ export default function WelcomePage() {
                     )}
                 </div>
 
-                {/* Mobile/tablet: render a small chart wheel below the type so the layout doesn't feel empty without the cream panel */}
-                <div className="lg:hidden flex justify-center pb-16 px-6 relative z-10">
-                    <div className="rounded-2xl bg-vastu-cream p-6 inline-block">
-                        <AstrologyChartWheel size={260} color="#2d3c38" />
-                    </div>
-                </div>
-
                 {/* Tiny gold stars sprinkled over the green canvas */}
                 <div className="hidden lg:block absolute pointer-events-none" style={{ top: '140px', left: '58%' }}>
                     <StarMark size={14} color="#C5A97D" />
@@ -333,6 +326,12 @@ export default function WelcomePage() {
                 <div className="hidden lg:block absolute pointer-events-none" style={{ top: '68%', left: '54%' }}>
                     <StarMark size={8} color="#C5A97D" style={{ opacity: 0.55 }} />
                 </div>
+            </section>
+
+            {/* Mobile-only: chart wheel sits in its own full-width cream section
+                so it doesn't float orphaned on the green canvas. */}
+            <section className="lg:hidden bg-vastu-cream py-20 flex justify-center px-6">
+                <AstrologyChartWheel size={300} color="#2d3c38" />
             </section>
 
             {/* Content Sections Below the Fold */}
