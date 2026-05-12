@@ -47,6 +47,16 @@ export interface Course {
     modules: Module[];
 }
 
+// Row shape from public.courses (Phase 2A).
+export interface CourseRow {
+    id: string;
+    slug: string;
+    title: string;
+    description?: string | null;
+    is_active: boolean;
+    order_index: number;
+}
+
 export interface LiveStream {
     id: string;
     title: string;

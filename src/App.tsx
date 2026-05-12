@@ -20,6 +20,7 @@ import QuizResults from './pages/teacher/QuizResults';
 import TeacherFeedback from './pages/teacher/Feedback';
 
 import { AuthProvider } from './contexts/AuthContext';
+import { CourseProvider } from './contexts/CourseContext';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
@@ -53,8 +54,9 @@ function App() {
 
     return (
         <AuthProvider>
-            <Router>
-                <Routes>
+            <CourseProvider>
+                <Router>
+                    <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -88,8 +90,9 @@ function App() {
 
                     {/* Default redirect */}
                     <Route path="/" element={<Navigate to="/login" replace />} />
-                </Routes>
-            </Router>
+                    </Routes>
+                </Router>
+            </CourseProvider>
         </AuthProvider>
     );
 }
