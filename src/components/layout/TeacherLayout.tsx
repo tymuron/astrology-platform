@@ -23,7 +23,7 @@ export default function TeacherLayout() {
     const navItems = [
         { path: '/teacher', label: 'Kurs', icon: Layout },
         { path: '/teacher/students', label: 'Teilnehmer', icon: Users },
-        { path: '/teacher/kohorten', label: 'Kohorten', icon: Users },
+        { path: '/teacher/wellen', label: 'Wellen', icon: Users },
         { path: '/teacher/quiz-results', label: 'Quiz-Ergebnisse', icon: BarChart3 },
         { path: '/teacher/library', label: 'Bibliothek', icon: FileText },
         { path: '/teacher/feedback', label: 'Feedback', icon: Heart },
