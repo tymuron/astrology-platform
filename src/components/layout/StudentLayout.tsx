@@ -85,7 +85,7 @@ export default function StudentLayout() {
                         {/* Logo */}
                         <img src="/logo.png" alt="Academy" className="w-14 h-14 object-contain transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-lg drop-shadow-md" />
                         <div className="flex flex-col">
-                            <span className="font-serif text-[17px] tracking-[0.10em] text-vastu-dark leading-none">GANZHEITLICHE VEDISCHE ASTROLOGIE</span>
+                            <span className="font-serif text-base tracking-[0.20em] text-vastu-dark leading-none">ASTROLOGIE</span>
                             <span className="font-script text-vastu-dark/70 text-sm mt-1">Ausbildung</span>
                         </div>
                     </Link>
@@ -212,7 +212,7 @@ export default function StudentLayout() {
                 <Link to="/student/welcome" className="flex items-center gap-3">
                     <img src="/logo.png" alt="Academy" className="w-11 h-11 object-contain drop-shadow-sm" />
                     <div className="flex flex-col">
-                        <span className="font-serif text-sm tracking-[0.12em] text-vastu-dark leading-none">GANZHEITLICHE VEDISCHE ASTROLOGIE</span>
+                        <span className="font-serif text-sm tracking-[0.20em] text-vastu-dark leading-none">ASTROLOGIE</span>
                         <span className="font-script text-vastu-dark/70 text-xs">Ausbildung</span>
                     </div>
                 </Link>

@@ -99,8 +99,8 @@ export default function WelcomePage() {
                     <Link to="/student/welcome" className="flex items-center gap-4">
                         <img src="/logo.png" alt="Academy" className="w-12 h-12 object-contain drop-shadow-md" />
                         <div className="flex flex-col">
-                            <span className="font-serif text-sm tracking-[0.12em] text-vastu-dark leading-none">GANZHEITLICHE VEDISCHE ASTROLOGIE</span>
-                            <span className="font-script text-vastu-gold text-xs">{activeCourse?.title || 'Selbstentdeckung Academy'}</span>
+                            <span className="font-serif text-base tracking-[0.20em] text-vastu-dark leading-none">ASTROLOGIE</span>
+                            <span className="font-script text-vastu-gold text-xs mt-1">{activeCourse?.title || 'Selbstentdeckung Academy'}</span>
                         </div>
                     </Link>
                     <div className="flex items-center gap-4">
@@ -127,8 +127,8 @@ export default function WelcomePage() {
 
                 <div className="relative z-10 text-center text-white px-6 max-w-3xl mx-auto">
                     <p className="font-script text-vastu-gold text-3xl md:text-5xl mb-4 animate-fade-in">Willkommen, {displayName}</p>
-                    <h1 className="text-5xl md:text-8xl font-serif tracking-[0.12em] mb-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                        GANZHEITLICHE VEDISCHE ASTROLOGIE
+                    <h1 className="text-5xl sm:text-7xl md:text-8xl font-serif tracking-[0.08em] mb-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                        ASTROLOGIE
                     </h1>
                     <p className="font-script text-vastu-gold/80 text-xl md:text-2xl mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
                         {activeCourse?.title || 'Selbstentdeckung Academy'}

@@ -130,7 +130,7 @@ export default function RegisterPage() {
                     <div className="w-[72px] h-[72px] mx-auto rounded-full border-2 border-vastu-dark/30 flex items-center justify-center mb-5">
                         <span className="font-script text-vastu-dark text-4xl leading-none mt-1">A</span>
                     </div>
-                    <h1 className="text-2xl font-serif tracking-[0.10em] text-vastu-dark">GANZHEITLICHE VEDISCHE ASTROLOGIE</h1>
+                    <h1 className="text-3xl font-serif tracking-[0.25em] text-vastu-dark">ASTROLOGIE</h1>
                     <p className="font-script text-vastu-gold text-lg mt-1">{invite.courseTitle}</p>
                 </div>
 
