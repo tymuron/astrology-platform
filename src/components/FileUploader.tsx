@@ -22,7 +22,7 @@ export default function FileUploader({ onUploadComplete, folder = 'general', lab
 
         try {
             const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const fileName = `${crypto.randomUUID()}.${fileExt}`;
             const filePath = `${folder}/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
@@ -49,7 +49,7 @@ export default function FileUploader({ onUploadComplete, folder = 'general', lab
             onUploadComplete(publicUrl, type, file.name);
 
         } catch (error: any) {
-            alert('Error uploading file: ' + error.message);
+            alert('Fehler beim Hochladen der Datei: ' + error.message);
         } finally {
             setUploading(false);
         }

@@ -88,8 +88,28 @@ function App() {
                         <Route path="settings" element={<SettingsPage />} />
                     </Route>
 
-                    {/* Default redirect */}
+                    {/* Default redirect + catch-all 404 */}
                     <Route path="/" element={<Navigate to="/login" replace />} />
+                    <Route
+                        path="*"
+                        element={
+                            <div className="min-h-screen flex items-center justify-center bg-vastu-cream p-4">
+                                <div className="bg-white rounded-2xl border border-vastu-sand/50 shadow-sm max-w-md w-full p-10 text-center">
+                                    <div className="text-vastu-gold font-serif text-5xl mb-4">404</div>
+                                    <h1 className="text-2xl font-serif text-vastu-dark mb-3">Seite nicht gefunden</h1>
+                                    <p className="text-vastu-text-light font-body leading-relaxed mb-6">
+                                        Die gesuchte Seite gibt es hier nicht. Vielleicht ist der Link veraltet.
+                                    </p>
+                                    <a
+                                        href="/login"
+                                        className="inline-block bg-vastu-dark text-white px-6 py-3 rounded-xl font-sans font-medium hover:bg-vastu-dark-deep transition-colors"
+                                    >
+                                        Zur Anmeldung
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    />
                     </Routes>
                 </Router>
             </CourseProvider>

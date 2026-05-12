@@ -6,6 +6,7 @@ import AddLinkModal from '../../components/AddLinkModal';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import QuizEditor from '../../components/QuizEditor';
+import { useCourseContext } from '../../contexts/CourseContext';
 
 interface Material {
     id: string;
@@ -556,6 +557,7 @@ const ModulEditor = ({ modul, onDelete, onUpdate, onAddLektion, onMoveUp, onMove
 };
 
 export default function CourseEditor() {
+    const { courses, activeCourseId, setActiveCourseId, loading: coursesLoading } = useCourseContext();
     const [modules, setModules] = useState<Modul[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -593,9 +595,16 @@ export default function CourseEditor() {
                 return;
             }
 
+            if (!activeCourseId) {
+                setModules([]);
+                setLoading(false);
+                return;
+            }
+
             const { data, error } = await supabase
                 .from('weeks')
                 .select(`*, days (*, materials (*)), materials (*)`)
+                .eq('course_id', activeCourseId)
                 .order('order_index', { ascending: true });
 
             if (error) throw error;
@@ -630,13 +639,23 @@ export default function CourseEditor() {
         }
     }
 
-    useEffect(() => { fetchModules(); }, []);
+    useEffect(() => { fetchModules(); }, [activeCourseId]);
 
     const handleAddModul = async () => {
+        if (!activeCourseId) {
+            alert('Bitte zuerst eine Welle auswählen.');
+            return;
+        }
         const title = window.prompt('Modulname:');
         if (!title) return;
-        const { error } = await supabase.from('weeks').insert([{ title, order_index: modules.length + 1 }]);
-        if (!error) fetchModules();
+        const { error } = await supabase
+            .from('weeks')
+            .insert([{ title, order_index: modules.length + 1, course_id: activeCourseId }]);
+        if (error) {
+            alert('Fehler beim Erstellen des Moduls: ' + error.message);
+            return;
+        }
+        fetchModules();
     };
 
     const handleDeleteModul = async (id: string) => {
@@ -656,16 +675,40 @@ export default function CourseEditor() {
         }
     };
 
-    if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>;
+    if (loading || coursesLoading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>;
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-20">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-serif text-vastu-dark">Kurs-Editor</h1>
-                <button onClick={handleAddModul} className="flex items-center gap-2 bg-vastu-dark text-white px-4 py-2 rounded-lg hover:bg-vastu-dark/90">
-                    <Plus size={18} /> Modul hinzufügen
-                </button>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-serif text-vastu-dark">Kurs-Editor</h1>
+                    <p className="text-sm text-vastu-text-light mt-1">Module und Lektionen werden in der gewählten Welle gespeichert.</p>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <select
+                        value={activeCourseId || ''}
+                        onChange={(e) => setActiveCourseId(e.target.value || null)}
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-vastu-dark"
+                        disabled={courses.length === 0}
+                    >
+                        {courses.length === 0 && <option value="">Keine Welle vorhanden</option>}
+                        {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                    </select>
+                    <button
+                        onClick={handleAddModul}
+                        disabled={!activeCourseId}
+                        className="flex items-center gap-2 bg-vastu-dark text-white px-4 py-2 rounded-lg hover:bg-vastu-dark/90 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <Plus size={18} /> Modul hinzufügen
+                    </button>
+                </div>
             </div>
+
+            {!activeCourseId && courses.length === 0 && (
+                <div className="bg-white border border-vastu-sand/50 rounded-2xl p-8 text-center text-vastu-text-light">
+                    Erstelle zuerst eine Welle unter „Wellen", um Module hinzuzufügen.
+                </div>
+            )}
 
             <div className="space-y-4">
                 {modules.map((modul, index) => (

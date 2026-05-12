@@ -82,20 +82,29 @@ export default function StudentDashboard() {
     const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
     const moduleNum = getModuleNumber(activeMod.id);
 
+    const [unlockError, setUnlockError] = useState<string | null>(null);
+    const [unlockSuccess, setUnlockSuccess] = useState(false);
+
     const handleUnlock = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!reviewUrl) return;
 
         setSubmitting(true);
+        setUnlockError(null);
         try {
             const { error } = await supabase.rpc('submit_review', { url: reviewUrl });
             if (error) throw error;
-            setShowUnlockModal(false);
-            alert('Danke für dein Feedback! Der Bonus ist nun freigeschaltet.');
-            window.location.reload();
-        } catch (error) {
+            setUnlockSuccess(true);
+            // Soft refresh of module list after a beat so the bonus unlocks visually.
+            setTimeout(() => {
+                setShowUnlockModal(false);
+                setUnlockSuccess(false);
+                setReviewUrl('');
+                window.location.reload();
+            }, 1400);
+        } catch (error: any) {
             console.error(error);
-            alert('Fehler beim Freischalten. Bitte versuche es erneut.');
+            setUnlockError(error?.message || 'Fehler beim Freischalten. Bitte versuche es erneut.');
         } finally {
             setSubmitting(false);
         }
@@ -214,6 +223,17 @@ export default function StudentDashboard() {
                                         Nimm ein kurzes Video (1-2 Min) auf, in dem du von deinen Erfahrungen berichtest, und füge den Link hier ein (z.B. YouTube, Vimeo, Google Drive).
                                     </p>
                                 </div>
+
+                                {unlockSuccess && (
+                                    <div className="bg-green-50 border border-green-200 text-green-700 text-sm font-sans p-3 rounded-xl mb-4 text-center">
+                                        Danke für dein Feedback! Der Bonus wird gleich freigeschaltet…
+                                    </div>
+                                )}
+                                {unlockError && (
+                                    <div className="bg-red-50 border border-red-100 text-red-600 text-sm font-sans p-3 rounded-xl mb-4 text-center">
+                                        {unlockError}
+                                    </div>
+                                )}
 
                                 <div className="relative">
                                     <Video className="absolute left-3 top-3 text-vastu-sand w-5 h-5" />

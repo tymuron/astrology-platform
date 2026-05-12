@@ -94,7 +94,7 @@ export default function Profile() {
             const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
             if (!croppedImageBlob) throw new Error('Bild konnte nicht zugeschnitten werden');
 
-            const fileName = `${user?.id}-${Math.random()}.jpg`;
+            const fileName = `${user?.id}/${crypto.randomUUID()}.jpg`;
             const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, croppedImageBlob);
             if (uploadError) throw uploadError;
 
