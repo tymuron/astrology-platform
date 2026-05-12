@@ -50,6 +50,21 @@ export default function StudentDashboard() {
         return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-vastu-gold" size={40} /></div>;
     }
 
+    if (modules.length === 0) {
+        return (
+            <div className="max-w-2xl mx-auto py-16 px-6 text-center animate-fade-in">
+                <div className="bg-white rounded-2xl border border-vastu-sand/50 p-10 shadow-sm">
+                    <FileText className="mx-auto text-vastu-gold mb-4" size={40} />
+                    <h2 className="font-serif text-2xl text-vastu-dark mb-3">Noch keine Module verfügbar</h2>
+                    <p className="text-vastu-text-light font-body leading-relaxed">
+                        Deine Mentorin hat für diese Welle noch keine Module hinzugefügt.
+                        Sobald die ersten Inhalte freigeschaltet sind, erscheinen sie hier.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     const activeMod = modules.find(m => m.id === activeModuleId);
     if (!activeMod) {
         // Module not yet selected or invalid — useEffect will redirect shortly
