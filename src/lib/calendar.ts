@@ -41,7 +41,7 @@ export function generateICS(event: CalendarEvent): string {
     const lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
-        'PRODID:-//GanzheitlicheVedischeAstrologie//Kurs//DE',
+        'PRODID:-//HolistischeVedischeAstrologie//Kurs//DE',
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
         'BEGIN:VEVENT',

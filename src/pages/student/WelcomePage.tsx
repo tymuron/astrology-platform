@@ -190,7 +190,7 @@ export default function WelcomePage() {
                             animationDelay: '0.1s',
                         }}
                     >
-                        Ganzheitliche
+                        Holistische
                         <br />
                         <span
                             className="text-vastu-gold"
@@ -546,7 +546,7 @@ export default function WelcomePage() {
             </section>
 
             <footer className="border-t border-vastu-sand/50 py-8 text-center">
-                <p className="text-sm font-sans text-vastu-text-light">© 2026 Ganzheitliche Vedische Astrologie · Selbstentdeckung Academy</p>
+                <p className="text-sm font-sans text-vastu-text-light">© 2026 Holistische Vedische Astrologie · Selbstentdeckung Academy</p>
             </footer>
         </div>
     );
