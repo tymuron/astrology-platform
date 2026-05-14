@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Mail, User, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Search, Mail, User, Plus, Trash2, UserX } from 'lucide-react';
 import { useCourseContext } from '../../contexts/CourseContext';
 import { CourseRow } from '../../lib/types';
 
@@ -117,6 +117,20 @@ export default function Students() {
         ));
     };
 
+    const deleteStudent = async (studentId: string, label: string) => {
+        if (!window.confirm(
+            `Teilnehmer „${label}" endgültig löschen?\n\n` +
+            `Konto, Profil, Zugänge und Fortschritt werden komplett entfernt. ` +
+            `Das kann nicht rückgängig gemacht werden.`
+        )) return;
+        const { error: rpcErr } = await supabase.rpc('admin_delete_user', { target_user_id: studentId });
+        if (rpcErr) {
+            alert('Fehler beim Löschen: ' + rpcErr.message);
+            return;
+        }
+        setStudents(prev => prev.filter(s => s.id !== studentId));
+    };
+
     if (loading || coursesLoading) {
         return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-vastu-dark" size={40} /></div>;
     }
@@ -197,12 +211,13 @@ export default function Students() {
                             <th className="text-left py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500">E-Mail</th>
                             <th className="text-left py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500">Wellen</th>
                             <th className="text-left py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500">Registriert</th>
+                            <th className="text-right py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500 w-12"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {filtered.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="py-12 text-center text-gray-500">
+                                <td colSpan={5} className="py-12 text-center text-gray-500">
                                     {searchQuery ? 'Keine Teilnehmer gefunden.' : 'Noch keine Teilnehmer.'}
                                 </td>
                             </tr>
@@ -259,6 +274,15 @@ export default function Students() {
                                     </td>
                                     <td className="py-3 px-4 text-gray-500 text-sm whitespace-nowrap">
                                         {new Date(student.created_at).toLocaleDateString('de-DE')}
+                                    </td>
+                                    <td className="py-3 px-4 text-right">
+                                        <button
+                                            onClick={() => deleteStudent(student.id, student.full_name || student.email)}
+                                            title="Teilnehmer endgültig löschen"
+                                            className="text-gray-300 hover:text-red-600 transition-colors"
+                                        >
+                                            <UserX size={16} />
+                                        </button>
                                     </td>
                                 </tr>
                             ))
