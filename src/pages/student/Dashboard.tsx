@@ -30,6 +30,8 @@ export default function StudentDashboard() {
     const [reviewUrl, setReviewUrl] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState<'lektionen' | 'materialien' | 'links'>('lektionen');
+    const [unlockError, setUnlockError] = useState<string | null>(null);
+    const [unlockSuccess, setUnlockSuccess] = useState(false);
 
     const searchParams = new URLSearchParams(location.search);
     const activeModuleId = searchParams.get('module');
@@ -81,9 +83,6 @@ export default function StudentDashboard() {
     const totalCount = activeMod.lektionen.length;
     const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
     const moduleNum = getModuleNumber(activeMod.id);
-
-    const [unlockError, setUnlockError] = useState<string | null>(null);
-    const [unlockSuccess, setUnlockSuccess] = useState(false);
 
     const handleUnlock = async (e: React.FormEvent) => {
         e.preventDefault();
