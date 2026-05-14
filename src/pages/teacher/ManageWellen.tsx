@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Save, X, Calendar, Loader2, Link2, Copy, Check, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Trash2, X, Calendar, Loader2, Link2, Copy, Check, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { CalendarEvent, CourseRow, CourseSettings, UsefulLink } from '../../lib/types';
+import { useCourseContext } from '../../contexts/CourseContext';
+import { CourseRow } from '../../lib/types';
 
 interface CourseInvite {
     id: string;
@@ -138,236 +140,30 @@ const InvitePanel = ({ courseId, courseTitle }: { courseId: string; courseTitle:
     );
 };
 
-const emptySettings = (courseId: string): CourseSettings => ({
-    course_id: courseId,
-    welcome_intro: '',
-    welcome_signature: '',
-    welcome_video_url: '',
-    zoom_link: '',
-    telegram_link: '',
-    external_tool_label: '',
-    external_tool_url: '',
-    useful_links: [],
-    calendar_events: [],
-    updated_at: new Date().toISOString(),
-});
-
-const SettingsPanel = ({ courseId }: { courseId: string }) => {
-    const [data, setData] = useState<CourseSettings | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [dirty, setDirty] = useState(false);
-
-    useEffect(() => {
-        let cancelled = false;
-        async function load() {
-            setLoading(true);
-            const { data: row, error } = await supabase
-                .from('course_settings')
-                .select('*')
-                .eq('course_id', courseId)
-                .maybeSingle();
-            if (cancelled) return;
-            const base = emptySettings(courseId);
-            if (error || !row) {
-                setData(base);
-            } else {
-                setData({
-                    ...base,
-                    ...row,
-                    useful_links: Array.isArray(row.useful_links) ? row.useful_links : [],
-                    calendar_events: Array.isArray(row.calendar_events) ? row.calendar_events : [],
-                });
-            }
-            setLoading(false);
-            setDirty(false);
-        }
-        load();
-        return () => { cancelled = true; };
-    }, [courseId]);
-
-    const update = (patch: Partial<CourseSettings>) => {
-        setData(prev => (prev ? { ...prev, ...patch } : prev));
-        setDirty(true);
-    };
-
-    const handleSave = async () => {
-        if (!data) return;
-        setSaving(true);
-        const { error } = await supabase
-            .from('course_settings')
-            .upsert({
-                course_id: courseId,
-                welcome_intro: data.welcome_intro,
-                welcome_signature: data.welcome_signature,
-                welcome_video_url: data.welcome_video_url,
-                zoom_link: data.zoom_link,
-                telegram_link: data.telegram_link,
-                external_tool_label: data.external_tool_label,
-                external_tool_url: data.external_tool_url,
-                useful_links: data.useful_links,
-                calendar_events: data.calendar_events,
-                updated_at: new Date().toISOString(),
-            }, { onConflict: 'course_id' });
-        setSaving(false);
-        if (error) { alert('Speichern fehlgeschlagen: ' + error.message); return; }
-        setDirty(false);
-    };
-
-    if (loading || !data) {
-        return <div className="bg-white border border-gray-200 rounded-xl p-5 text-sm text-gray-400">Lädt…</div>;
-    }
-
-    const fieldClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-vastu-dark";
-    const labelClass = "block text-xs uppercase tracking-wider text-gray-500 mb-1";
-
+// Small CTA card pointing Maria to the dedicated Welcome-Seite editor for a wave.
+// Lives where the bulky inline SettingsPanel used to be — keeps wave management
+// focused on registration links and reduces duplicate editing surfaces.
+const WelcomeLinkCard = ({ courseId, courseTitle }: { courseId: string; courseTitle: string }) => {
+    const { setActiveCourseId } = useCourseContext();
     return (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
-            <div className="flex items-center justify-between gap-3">
-                <div>
-                    <div className="text-xs uppercase tracking-wider text-gray-400">Welcome-Seite</div>
+        <Link
+            to="/teacher/welcome-seite"
+            onClick={() => setActiveCourseId(courseId)}
+            className="block bg-vastu-cream/40 border border-vastu-sand/40 rounded-xl p-5 hover:bg-vastu-cream/70 hover:border-vastu-gold/40 transition-colors group"
+        >
+            <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-vastu-dark flex-shrink-0">
+                    <Sparkles size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="text-xs uppercase tracking-wider text-vastu-dark/60">Welcome-Seite</div>
                     <div className="text-sm font-medium text-vastu-dark">
-                        Begrüssung, Termine und Links für diese Welle
+                        Begrüssung, Termine, Video & Links für „{courseTitle}" einrichten
                     </div>
                 </div>
-                <button onClick={handleSave} disabled={!dirty || saving}
-                    className="flex items-center gap-1 text-sm bg-vastu-dark text-white px-3 py-1.5 rounded-lg hover:bg-vastu-dark-deep disabled:opacity-40">
-                    {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                    {saving ? 'Speichert…' : 'Speichern'}
-                </button>
+                <ChevronRight size={18} className="text-vastu-dark/40 group-hover:text-vastu-dark transition-colors flex-shrink-0" />
             </div>
-
-            <div>
-                <label className={labelClass}>Begrüssungsnachricht</label>
-                <textarea value={data.welcome_intro || ''} onChange={e => update({ welcome_intro: e.target.value })}
-                    rows={3} placeholder="Z.B. „Schön, dass du da bist. Möge diese Reise…"
-                    className={fieldClass + ' resize-none'} />
-            </div>
-
-            <div>
-                <label className={labelClass}>Signatur (Mentorin-Name)</label>
-                <input type="text" value={data.welcome_signature || ''} onChange={e => update({ welcome_signature: e.target.value })}
-                    placeholder="Z.B. Maria · Mentorin" className={fieldClass} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className={labelClass}>Begrüssungsvideo (Vimeo/YouTube)</label>
-                    <input type="url" value={data.welcome_video_url || ''} onChange={e => update({ welcome_video_url: e.target.value })}
-                        placeholder="https://…" className={fieldClass} />
-                </div>
-                <div>
-                    <label className={labelClass}>Zoom-Link</label>
-                    <input type="url" value={data.zoom_link || ''} onChange={e => update({ zoom_link: e.target.value })}
-                        placeholder="https://zoom.us/…" className={fieldClass} />
-                </div>
-                <div>
-                    <label className={labelClass}>Telegram-Kanal</label>
-                    <input type="url" value={data.telegram_link || ''} onChange={e => update({ telegram_link: e.target.value })}
-                        placeholder="https://t.me/…" className={fieldClass} />
-                </div>
-                <div>
-                    <label className={labelClass}>Externes Tool — Label</label>
-                    <input type="text" value={data.external_tool_label || ''} onChange={e => update({ external_tool_label: e.target.value })}
-                        placeholder="Z.B. Astro-Karte erstellen" className={fieldClass} />
-                </div>
-                <div className="md:col-span-2">
-                    <label className={labelClass}>Externes Tool — URL</label>
-                    <input type="url" value={data.external_tool_url || ''} onChange={e => update({ external_tool_url: e.target.value })}
-                        placeholder="https://…" className={fieldClass} />
-                </div>
-            </div>
-
-            <div>
-                <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs uppercase tracking-wider text-gray-500">Nützliche Links</label>
-                    <button onClick={() => update({ useful_links: [...data.useful_links, { label: '', url: '' }] })}
-                        className="text-xs flex items-center gap-1 text-vastu-dark hover:bg-gray-100 px-2 py-1 rounded">
-                        <Plus size={12} /> Hinzufügen
-                    </button>
-                </div>
-                {data.useful_links.length === 0 ? (
-                    <div className="text-xs text-gray-400 italic">Noch keine Links.</div>
-                ) : (
-                    <div className="space-y-2">
-                        {data.useful_links.map((link: UsefulLink, i: number) => (
-                            <div key={i} className="flex items-center gap-2">
-                                <input type="text" placeholder="Name (z.B. Drive)" value={link.label}
-                                    onChange={e => {
-                                        const next = [...data.useful_links];
-                                        next[i] = { ...next[i], label: e.target.value };
-                                        update({ useful_links: next });
-                                    }}
-                                    className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-vastu-dark" />
-                                <input type="url" placeholder="https://…" value={link.url}
-                                    onChange={e => {
-                                        const next = [...data.useful_links];
-                                        next[i] = { ...next[i], url: e.target.value };
-                                        update({ useful_links: next });
-                                    }}
-                                    className="flex-[2] border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-vastu-dark" />
-                                <button onClick={() => update({ useful_links: data.useful_links.filter((_, idx) => idx !== i) })}
-                                    className="p-1.5 text-gray-400 hover:text-red-500"><X size={14} /></button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            <div>
-                <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs uppercase tracking-wider text-gray-500">Termine / Kalender</label>
-                    <button onClick={() => update({ calendar_events: [...data.calendar_events, { label: '', datetime: '', url: '', description: '' }] })}
-                        className="text-xs flex items-center gap-1 text-vastu-dark hover:bg-gray-100 px-2 py-1 rounded">
-                        <Plus size={12} /> Hinzufügen
-                    </button>
-                </div>
-                {data.calendar_events.length === 0 ? (
-                    <div className="text-xs text-gray-400 italic">Noch keine Termine.</div>
-                ) : (
-                    <div className="space-y-3">
-                        {data.calendar_events.map((ev: CalendarEvent, i: number) => (
-                            <div key={i} className="border border-gray-100 rounded-lg p-3 space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <input type="text" placeholder="Titel" value={ev.label}
-                                        onChange={e => {
-                                            const next = [...data.calendar_events];
-                                            next[i] = { ...next[i], label: e.target.value };
-                                            update({ calendar_events: next });
-                                        }}
-                                        className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-vastu-dark" />
-                                    <input type="datetime-local" value={ev.datetime?.slice(0, 16) || ''}
-                                        onChange={e => {
-                                            const next = [...data.calendar_events];
-                                            next[i] = { ...next[i], datetime: e.target.value ? new Date(e.target.value).toISOString() : '' };
-                                            update({ calendar_events: next });
-                                        }}
-                                        className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-vastu-dark" />
-                                    <button onClick={() => update({ calendar_events: data.calendar_events.filter((_, idx) => idx !== i) })}
-                                        className="p-1.5 text-gray-400 hover:text-red-500"><X size={14} /></button>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <input type="url" placeholder="Link (optional)" value={ev.url || ''}
-                                        onChange={e => {
-                                            const next = [...data.calendar_events];
-                                            next[i] = { ...next[i], url: e.target.value };
-                                            update({ calendar_events: next });
-                                        }}
-                                        className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-vastu-dark" />
-                                    <input type="text" placeholder="Beschreibung (optional)" value={ev.description || ''}
-                                        onChange={e => {
-                                            const next = [...data.calendar_events];
-                                            next[i] = { ...next[i], description: e.target.value };
-                                            update({ calendar_events: next });
-                                        }}
-                                        className="flex-[2] border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-vastu-dark" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
+        </Link>
     );
 };
 
@@ -497,7 +293,7 @@ export default function ManageWellen() {
                                             editingId === c.id ? 'bg-vastu-dark text-white' : 'text-vastu-dark border border-vastu-dark/20 hover:bg-gray-50'
                                         }`}>
                                         {editingId === c.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                        <Settings size={14} /> {editingId === c.id ? 'Schliessen' : 'Verwalten'}
+                                        {editingId === c.id ? 'Schliessen' : 'Einladungen & Welcome-Seite'}
                                     </button>
                                     <button onClick={() => handleDelete(c.id, c.title)}
                                         className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50">
@@ -508,7 +304,7 @@ export default function ManageWellen() {
                             {editingId === c.id && (
                                 <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4">
                                     <InvitePanel courseId={c.id} courseTitle={c.title} />
-                                    <SettingsPanel courseId={c.id} />
+                                    <WelcomeLinkCard courseId={c.id} courseTitle={c.title} />
                                 </div>
                             )}
                         </div>

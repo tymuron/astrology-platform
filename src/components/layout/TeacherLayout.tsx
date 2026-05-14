@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { LogOut, Layout, Users, Loader2, FileText, Menu, X, Settings, BarChart3, Heart } from 'lucide-react';
+import { LogOut, Layout, Users, Loader2, FileText, Menu, X, Settings, BarChart3, Heart, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,8 +22,9 @@ export default function TeacherLayout() {
 
     const navItems = [
         { path: '/teacher', label: 'Kurs', icon: Layout },
-        { path: '/teacher/students', label: 'Teilnehmer', icon: Users },
+        { path: '/teacher/welcome-seite', label: 'Welcome-Seite', icon: Sparkles },
         { path: '/teacher/wellen', label: 'Wellen', icon: Users },
+        { path: '/teacher/students', label: 'Teilnehmer', icon: Users },
         { path: '/teacher/quiz-results', label: 'Quiz-Ergebnisse', icon: BarChart3 },
         { path: '/teacher/library', label: 'Bibliothek', icon: FileText },
         { path: '/teacher/feedback', label: 'Feedback', icon: Heart },
