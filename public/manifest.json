@@ -1,11 +1,11 @@
 {
-    "name": "Vastulogie Ausbildung",
-    "short_name": "Vastulogie",
-    "description": "Selbstentdeckung Academy — Vastulogie Ausbildung",
+    "name": "Ganzheitliche Vedische Astrologie",
+    "short_name": "Astrologie",
+    "description": "Selbstentdeckung Academy — Ganzheitliche Vedische Astrologie",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#faf8f6",
-    "theme_color": "#8a7e7b",
+    "background_color": "#EFDECB",
+    "theme_color": "#475D57",
     "orientation": "portrait-primary",
     "icons": [
         {
