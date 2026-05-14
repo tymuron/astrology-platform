@@ -13,17 +13,17 @@ interface StudentRow {
     entitled_courses: { id: string; title: string }[];
 }
 
-interface EntitlementJoin {
+interface EntitlementRow {
     user_id: string;
     granted_at: string;
     courses: { id: string; title: string } | { id: string; title: string }[] | null;
-    profiles: {
-        id: string;
-        email: string;
-        full_name: string | null;
-        created_at: string;
-        role: string;
-    } | null;
+}
+
+interface ProfileRow {
+    id: string;
+    email: string;
+    full_name: string | null;
+    created_at: string;
 }
 
 export default function Students() {
@@ -38,54 +38,41 @@ export default function Students() {
         setLoading(true);
         setError('');
         try {
-            // Pull every entitlement joined with its course + profile.
-            // Then group by user so each row knows every wave they belong to.
-            const { data, error: qErr } = await supabase
-                .from('user_entitlements')
-                .select('user_id, granted_at, courses(id, title), profiles!inner(id, email, full_name, created_at, role)')
-                .eq('profiles.role', 'student')
-                .order('granted_at', { ascending: false });
-
-            if (qErr) throw qErr;
-
-            const byUser = new Map<string, StudentRow>();
-            for (const row of (data ?? []) as unknown as EntitlementJoin[]) {
-                if (!row.profiles) continue;
-                const p = row.profiles;
-                const c = Array.isArray(row.courses) ? row.courses[0] : row.courses;
-                if (!byUser.has(p.id)) {
-                    byUser.set(p.id, {
-                        id: p.id,
-                        email: p.email,
-                        full_name: p.full_name,
-                        created_at: p.created_at,
-                        entitled_courses: [],
-                    });
-                }
-                if (c) byUser.get(p.id)!.entitled_courses.push(c);
-            }
-
-            // Also include students with NO entitlements so the teacher can grant access manually.
-            const { data: orphans, error: orphErr } = await supabase
+            // 1. Get every student profile.
+            const { data: profileData, error: profErr } = await supabase
                 .from('profiles')
                 .select('id, email, full_name, created_at')
                 .eq('role', 'student');
-            if (orphErr) throw orphErr;
-            for (const p of (orphans ?? []) as Array<{ id: string; email: string; full_name: string | null; created_at: string }>) {
-                if (!byUser.has(p.id)) {
-                    byUser.set(p.id, {
-                        id: p.id,
-                        email: p.email,
-                        full_name: p.full_name,
-                        created_at: p.created_at,
-                        entitled_courses: [],
-                    });
-                }
+            if (profErr) throw profErr;
+            const profiles = (profileData ?? []) as ProfileRow[];
+
+            // 2. Get every entitlement with its course title.
+            //    No PostgREST FK between user_entitlements and profiles, so we join in JS below.
+            const { data: entData, error: entErr } = await supabase
+                .from('user_entitlements')
+                .select('user_id, granted_at, courses(id, title)')
+                .order('granted_at', { ascending: false });
+            if (entErr) throw entErr;
+
+            // 3. Bucket entitlements by user.
+            const entByUser = new Map<string, { id: string; title: string }[]>();
+            for (const row of (entData ?? []) as EntitlementRow[]) {
+                const c = Array.isArray(row.courses) ? row.courses[0] : row.courses;
+                if (!c) continue;
+                if (!entByUser.has(row.user_id)) entByUser.set(row.user_id, []);
+                entByUser.get(row.user_id)!.push(c);
             }
 
-            setStudents(Array.from(byUser.values()).sort((a, b) =>
-                (b.created_at || '').localeCompare(a.created_at || '')
-            ));
+            // 4. Combine: one row per student, with their (possibly empty) wave list.
+            const result: StudentRow[] = profiles.map(p => ({
+                id: p.id,
+                email: p.email,
+                full_name: p.full_name,
+                created_at: p.created_at,
+                entitled_courses: entByUser.get(p.id) ?? [],
+            }));
+            result.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+            setStudents(result);
         } catch (err: any) {
             console.error('Error fetching students:', err);
             setError(err?.message || 'Teilnehmer konnten nicht geladen werden.');
