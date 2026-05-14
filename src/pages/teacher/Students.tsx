@@ -1,232 +1,280 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Mail, User } from 'lucide-react';
-import { Kohorte } from '../../lib/types';
+import { Loader2, Search, Mail, User, Plus, Trash2 } from 'lucide-react';
+import { useCourseContext } from '../../contexts/CourseContext';
+import { CourseRow } from '../../lib/types';
 
-interface StudentProfile {
+interface StudentRow {
     id: string;
     email: string;
-    name: string | null;
-    full_name?: string | null;
+    full_name: string | null;
     created_at: string;
-    kohorte_id?: string;
-    kohorte?: string;
+    entitled_courses: { id: string; title: string }[];
 }
 
-
-type DbError = { code?: string; message?: string };
-const isColumnMissing = (error: DbError | null | undefined, columnName: string) =>
-    !!error && (error.code === '42703' || error.message?.includes(columnName));
-const isTableMissing = (error: DbError | null | undefined, tableName: string) =>
-    !!error && (error.code === '42P01' || error.message?.includes(tableName));
+interface EntitlementJoin {
+    user_id: string;
+    granted_at: string;
+    courses: { id: string; title: string } | { id: string; title: string }[] | null;
+    profiles: {
+        id: string;
+        email: string;
+        full_name: string | null;
+        created_at: string;
+        role: string;
+    } | null;
+}
 
 export default function Students() {
-    const [students, setStudents] = useState<StudentProfile[]>([]);
-    const [kohorten, setKohorten] = useState<Kohorte[]>([]);
+    const { courses, activeCourseId, setActiveCourseId, loading: coursesLoading } = useCourseContext();
+    const [students, setStudents] = useState<StudentRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterKohorte, setFilterKohorte] = useState<string>('all');
+    const [filter, setFilter] = useState<'active' | 'all'>('active');
 
-    useEffect(() => {
-        async function fetchStudents() {
-            try {
-                let profilesRes: any = await supabase
-                    .from('profiles')
-                    .select('id, email, name, created_at, kohorte_id, kohorte, role')
-                    .eq('role', 'student')
-                    .order('created_at', { ascending: false });
-                if (profilesRes.error && isColumnMissing(profilesRes.error, 'kohorte_id')) {
-                    profilesRes = await supabase
-                        .from('profiles')
-                        .select('id, email, name, created_at, kohorte, role')
-                        .eq('role', 'student')
-                        .order('created_at', { ascending: false });
-                }
-                if (profilesRes.error) throw profilesRes.error;
-
-                const kohortenRes = await supabase
-                    .from('kohorten')
-                    .select('id, name, start_date, description, color, created_at')
-                    .order('start_date', { ascending: true });
-
-                if (!kohortenRes.error) {
-                    setKohorten(kohortenRes.data || []);
-                } else if (!isTableMissing(kohortenRes.error, 'kohorten')) {
-                    console.warn('Kohorten konnten nicht geladen werden:', kohortenRes.error.message);
-                }
-
-                const normalizedStudents = (profilesRes.data || []).map((profile: any) => ({
-                    ...profile,
-                    name: profile.name || profile.email?.split('@')[0] || null,
-                }));
-                setStudents(normalizedStudents);
-            } catch (error) {
-                console.error('Error fetching students:', error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchStudents();
-    }, []);
-
-    const assignKohorte = async (studentId: string, kohorteId: string) => {
-        const previous = students;
-        setStudents(prev => prev.map(s =>
-            s.id === studentId ? { ...s, kohorte_id: kohorteId || undefined, kohorte: kohorteId || undefined } : s
-        ));
-
+    async function fetchStudents() {
+        setLoading(true);
+        setError('');
         try {
-            const updatePrimary = await supabase
+            // Pull every entitlement joined with its course + profile.
+            // Then group by user so each row knows every wave they belong to.
+            const { data, error: qErr } = await supabase
+                .from('user_entitlements')
+                .select('user_id, granted_at, courses(id, title), profiles!inner(id, email, full_name, created_at, role)')
+                .eq('profiles.role', 'student')
+                .order('granted_at', { ascending: false });
+
+            if (qErr) throw qErr;
+
+            const byUser = new Map<string, StudentRow>();
+            for (const row of (data ?? []) as unknown as EntitlementJoin[]) {
+                if (!row.profiles) continue;
+                const p = row.profiles;
+                const c = Array.isArray(row.courses) ? row.courses[0] : row.courses;
+                if (!byUser.has(p.id)) {
+                    byUser.set(p.id, {
+                        id: p.id,
+                        email: p.email,
+                        full_name: p.full_name,
+                        created_at: p.created_at,
+                        entitled_courses: [],
+                    });
+                }
+                if (c) byUser.get(p.id)!.entitled_courses.push(c);
+            }
+
+            // Also include students with NO entitlements so the teacher can grant access manually.
+            const { data: orphans, error: orphErr } = await supabase
                 .from('profiles')
-                .update({ kohorte_id: kohorteId || null })
-                .eq('id', studentId);
-
-            if (updatePrimary.error && isColumnMissing(updatePrimary.error, 'kohorte_id')) {
-                const updateFallback = await supabase
-                    .from('profiles')
-                    .update({ kohorte: kohorteId || null })
-                    .eq('id', studentId);
-                if (updateFallback.error) throw updateFallback.error;
-                return;
+                .select('id, email, full_name, created_at')
+                .eq('role', 'student');
+            if (orphErr) throw orphErr;
+            for (const p of (orphans ?? []) as Array<{ id: string; email: string; full_name: string | null; created_at: string }>) {
+                if (!byUser.has(p.id)) {
+                    byUser.set(p.id, {
+                        id: p.id,
+                        email: p.email,
+                        full_name: p.full_name,
+                        created_at: p.created_at,
+                        entitled_courses: [],
+                    });
+                }
             }
-            if (updatePrimary.error) throw updatePrimary.error;
-        } catch (error) {
-            console.error('Fehler beim Zuweisen der Kohorte:', error);
-            setStudents(previous);
-            alert('Fehler beim Speichern der Kohorte. Bitte versuche es erneut.');
+
+            setStudents(Array.from(byUser.values()).sort((a, b) =>
+                (b.created_at || '').localeCompare(a.created_at || '')
+            ));
+        } catch (err: any) {
+            console.error('Error fetching students:', err);
+            setError(err?.message || 'Teilnehmer konnten nicht geladen werden.');
+        } finally {
+            setLoading(false);
         }
+    }
+
+    useEffect(() => { fetchStudents(); }, []);
+
+    const grantAccess = async (studentId: string, courseId: string, courseTitle: string) => {
+        const { error: insErr } = await supabase
+            .from('user_entitlements')
+            .insert([{ user_id: studentId, course_id: courseId, source: 'manual' }]);
+        if (insErr && insErr.code !== '23505') {
+            alert('Fehler beim Zuweisen: ' + insErr.message);
+            return;
+        }
+        // Optimistic local update
+        setStudents(prev => prev.map(s =>
+            s.id === studentId
+                ? { ...s, entitled_courses: [...s.entitled_courses.filter(c => c.id !== courseId), { id: courseId, title: courseTitle }] }
+                : s
+        ));
     };
 
-    if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-vastu-dark" size={40} /></div>;
-
-    const inviteLink = `${window.location.origin}/register`;
-
-    const copyLink = async () => {
-        try {
-            await navigator.clipboard.writeText(inviteLink);
-            alert('Link wurde kopiert!');
-        } catch {
-            alert('Kopieren fehlgeschlagen. Bitte Link manuell kopieren.');
+    const revokeAccess = async (studentId: string, courseId: string) => {
+        if (!window.confirm('Zugang zu dieser Welle entziehen?')) return;
+        const { error: delErr } = await supabase
+            .from('user_entitlements')
+            .delete()
+            .eq('user_id', studentId)
+            .eq('course_id', courseId);
+        if (delErr) {
+            alert('Fehler beim Entziehen: ' + delErr.message);
+            return;
         }
+        setStudents(prev => prev.map(s =>
+            s.id === studentId
+                ? { ...s, entitled_courses: s.entitled_courses.filter(c => c.id !== courseId) }
+                : s
+        ));
     };
+
+    if (loading || coursesLoading) {
+        return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-vastu-dark" size={40} /></div>;
+    }
 
     const filtered = students.filter(s => {
-        const matchesSearch = (s.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.email.toLowerCase().includes(searchQuery.toLowerCase());
-        const studentKohorte = s.kohorte_id || s.kohorte;
-        const matchesKohorte = filterKohorte === 'all' || studentKohorte === filterKohorte || (filterKohorte === 'none' && !studentKohorte);
-        return matchesSearch && matchesKohorte;
+        const q = searchQuery.trim().toLowerCase();
+        const matchesSearch = !q ||
+            (s.full_name || '').toLowerCase().includes(q) ||
+            s.email.toLowerCase().includes(q);
+        if (!matchesSearch) return false;
+        if (filter === 'all') return true;
+        // 'active' = filter to active wave only
+        if (!activeCourseId) return true;
+        return s.entitled_courses.some(c => c.id === activeCourseId);
     });
 
-    const getKohorte = (id?: string) => kohorten.find(k => k.id === id);
+    const activeCourse: CourseRow | null = courses.find(c => c.id === activeCourseId) || null;
 
     return (
         <div className="max-w-5xl mx-auto animate-fade-in">
-            <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-serif text-vastu-dark">Teilnehmer</h1>
-                <button
-                    onClick={copyLink}
-                    className="flex items-center gap-2 bg-vastu-accent/10 text-vastu-dark border border-vastu-accent/30 px-4 py-2 rounded-lg hover:bg-vastu-accent/20 transition-colors"
-                >
-                    <Mail size={18} />
-                    Einladungslink kopieren
-                </button>
-            </div>
+            {error && (
+                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            )}
 
-            {/* Invite Card */}
-            <div className="bg-white p-6 rounded-xl border border-vastu-accent/20 shadow-sm mb-8 flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h3 className="font-medium text-vastu-dark mb-1">Registrierungslink für Teilnehmer</h3>
-                    <p className="text-sm text-gray-500">Sende diesen Link an Teilnehmer, damit sie ein Konto erstellen können</p>
+                    <h1 className="text-3xl font-serif text-vastu-dark">Teilnehmer</h1>
+                    <p className="text-sm text-vastu-text-light mt-1">
+                        Einladungslinks werden in <Link to="/teacher/wellen" className="underline decoration-vastu-gold underline-offset-2 hover:text-vastu-dark">Wellen</Link> pro Welle erstellt.
+                    </p>
                 </div>
-                <code className="bg-gray-100 px-4 py-2 rounded text-sm text-gray-600 select-all">
-                    {inviteLink}
-                </code>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value as 'active' | 'all')}
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-vastu-dark"
+                    >
+                        <option value="active">Nur diese Welle</option>
+                        <option value="all">Alle Teilnehmer</option>
+                    </select>
+                    {filter === 'active' && (
+                        <select
+                            value={activeCourseId || ''}
+                            onChange={(e) => setActiveCourseId(e.target.value || null)}
+                            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-vastu-dark"
+                            disabled={courses.length === 0}
+                        >
+                            {courses.length === 0 && <option value="">Keine Welle</option>}
+                            {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                        </select>
+                    )}
+                </div>
             </div>
 
-            <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                    <p className="text-gray-500">Teilnehmerliste ({filtered.length})</p>
-                    {/* Kohorte filter */}
-                    <select
-                        value={filterKohorte}
-                        onChange={e => setFilterKohorte(e.target.value)}
-                        className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-vastu-accent bg-white"
-                    >
-                        <option value="all">Alle Kohorten</option>
-                        {kohorten.map(k => (
-                            <option key={k.id} value={k.id}>{k.name}</option>
-                        ))}
-                        <option value="none">Nicht zugewiesen</option>
-                    </select>
-                </div>
+            <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
+                <p className="text-gray-500 text-sm">
+                    {filter === 'active' && activeCourse
+                        ? <>{filtered.length} Teilnehmer in „{activeCourse.title}"</>
+                        : <>{filtered.length} Teilnehmer insgesamt</>}
+                </p>
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Suchen..."
-                        className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-vastu-accent/50 w-64"
+                        placeholder="Suchen…"
+                        className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-vastu-dark w-64"
                     />
                 </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-                <table className="w-full min-w-[640px]">
+                <table className="w-full min-w-[720px]">
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th className="text-left py-4 px-6 text-sm font-medium text-gray-500">Teilnehmer</th>
-                            <th className="text-left py-4 px-6 text-sm font-medium text-gray-500">E-Mail</th>
-                            <th className="text-left py-4 px-6 text-sm font-medium text-gray-500">Kohorte</th>
-                            <th className="text-left py-4 px-6 text-sm font-medium text-gray-500">Registriert am</th>
+                            <th className="text-left py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500">Teilnehmer</th>
+                            <th className="text-left py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500">E-Mail</th>
+                            <th className="text-left py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500">Wellen</th>
+                            <th className="text-left py-3 px-4 text-xs uppercase tracking-wider font-medium text-gray-500">Registriert</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {filtered.length > 0 ? (
-                            filtered.map((student) => {
-                                const kohorte = getKohorte(student.kohorte_id);
-                                return (
-                                    <tr key={student.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="py-4 px-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-vastu-light flex items-center justify-center text-vastu-dark">
-                                                    <User size={20} />
-                                                </div>
-                                                <span className="font-medium text-vastu-dark">{student.name || 'Kein Name'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 text-gray-600">
-                                            <div className="flex items-center gap-2">
-                                                <Mail size={14} className="text-gray-400" />
-                                                {student.email}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <select
-                                                value={student.kohorte_id || student.kohorte || ''}
-                                                onChange={e => assignKohorte(student.id, e.target.value)}
-                                                className="text-sm px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:border-vastu-accent bg-white"
-                                                style={kohorte ? { borderColor: kohorte.color, color: kohorte.color } : {}}
-                                            >
-                                                <option value="">— Keine —</option>
-                                                {kohorten.map(k => (
-                                                    <option key={k.id} value={k.id}>{k.name}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="py-4 px-6 text-gray-500 text-sm">
-                                            {new Date(student.created_at).toLocaleDateString('de-DE')}
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        ) : (
+                        {filtered.length === 0 ? (
                             <tr>
                                 <td colSpan={4} className="py-12 text-center text-gray-500">
-                                    {searchQuery ? 'Keine Teilnehmer gefunden' : 'Noch keine Teilnehmer registriert'}
+                                    {searchQuery ? 'Keine Teilnehmer gefunden.' : 'Noch keine Teilnehmer.'}
                                 </td>
                             </tr>
+                        ) : (
+                            filtered.map(student => (
+                                <tr key={student.id} className="hover:bg-gray-50/50 transition-colors align-top">
+                                    <td className="py-3 px-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-full bg-vastu-light flex items-center justify-center text-vastu-dark flex-shrink-0">
+                                                <User size={16} />
+                                            </div>
+                                            <span className="font-medium text-vastu-dark">{student.full_name || student.email.split('@')[0]}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-4 text-gray-600">
+                                        <div className="flex items-center gap-2">
+                                            <Mail size={13} className="text-gray-400" />
+                                            <span className="text-sm">{student.email}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-4">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {student.entitled_courses.length === 0 && (
+                                                <span className="text-xs text-gray-400 italic">Kein Zugang</span>
+                                            )}
+                                            {student.entitled_courses.map(c => (
+                                                <span
+                                                    key={c.id}
+                                                    className="inline-flex items-center gap-1 bg-vastu-cream/60 text-vastu-dark text-xs px-2 py-1 rounded-full border border-vastu-sand/50"
+                                                >
+                                                    {c.title}
+                                                    <button
+                                                        onClick={() => revokeAccess(student.id, c.id)}
+                                                        title="Zugang entziehen"
+                                                        className="ml-1 text-gray-400 hover:text-red-500"
+                                                    >
+                                                        <Trash2 size={11} />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                            {courses
+                                                .filter(c => !student.entitled_courses.some(ec => ec.id === c.id))
+                                                .map(c => (
+                                                    <button
+                                                        key={'add-' + c.id}
+                                                        onClick={() => grantAccess(student.id, c.id, c.title)}
+                                                        className="inline-flex items-center gap-1 text-xs text-vastu-dark/60 hover:text-vastu-dark border border-dashed border-vastu-sand rounded-full px-2 py-1"
+                                                        title={`Zugang zu „${c.title}" geben`}
+                                                    >
+                                                        <Plus size={11} /> {c.title}
+                                                    </button>
+                                                ))}
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-4 text-gray-500 text-sm whitespace-nowrap">
+                                        {new Date(student.created_at).toLocaleDateString('de-DE')}
+                                    </td>
+                                </tr>
+                            ))
                         )}
                     </tbody>
                 </table>
