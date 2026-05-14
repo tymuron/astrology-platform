@@ -225,9 +225,10 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
                                 <textarea
                                     value={local.homework_checklist || ''}
                                     onChange={(e) => handleChange('homework_checklist', e.target.value)}
-                                    rows={4}
-                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-vastu-accent bg-white"
-                                    placeholder={"Vastu-Karte besorgen oder selbst zeichnen\nRäume einordnen\nErfahrungen in der Gruppe teilen"}
+                                    rows={6}
+                                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-vastu-accent bg-white resize-y leading-relaxed font-mono"
+                                    style={{ minHeight: '160px' }}
+                                    placeholder={"Astro-Karte berechnen\nNatale Karte mit Mentorin teilen\nErfahrungen in der Gruppe teilen"}
                                 />
                                 <p className="text-xs text-gray-400 mt-1">Diese Punkte erscheinen als Checkliste für die Studenten. Wenn leer, wird die Beschreibung automatisch in Punkte aufgeteilt.</p>
                             </div>
