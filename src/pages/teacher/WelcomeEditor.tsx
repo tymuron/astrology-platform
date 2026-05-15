@@ -317,7 +317,10 @@ export default function WelcomeEditor() {
                                                 value={ev.datetime?.slice(0, 16) || ''}
                                                 onChange={e => {
                                                     const next = [...data.calendar_events];
-                                                    next[i] = { ...next[i], datetime: e.target.value ? new Date(e.target.value).toISOString() : '' };
+                                                    // Store the naive local value exactly as entered (YYYY-MM-DDTHH:mm).
+                                                    // Converting through Date→toISOString() shifted it by the timezone
+                                                    // offset on every keystroke, so the field appeared to jump back.
+                                                    next[i] = { ...next[i], datetime: e.target.value };
                                                     update({ calendar_events: next });
                                                 }}
                                                 className={fieldClass}
