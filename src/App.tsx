@@ -1,30 +1,47 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+
+// Eager: entry point + shared layout shells. These are needed for the very
+// first paint on any route, so code-splitting them would only add a flash.
 import LoginPage from './pages/LoginPage';
 import StudentLayout from './components/layout/StudentLayout';
-import StudentDashboard from './pages/student/Dashboard';
-import WelcomePage from './pages/student/WelcomePage';
-import LektionView from './pages/student/LektionView';
-import QuizView from './pages/student/QuizView';
-import Library from './pages/student/Library';
-import Profile from './pages/student/Profile';
-import InstallGuide from './pages/student/InstallGuide';
-import FeedbackPage from './pages/student/Feedback';
-
 import TeacherLayout from './components/layout/TeacherLayout';
-import CourseEditor from './pages/teacher/CourseEditor';
-import Students from './pages/teacher/Students';
-import ManageLibrary from './pages/teacher/ManageLibrary';
-import ManageWellen from './pages/teacher/ManageWellen';
-import WelcomeEditor from './pages/teacher/WelcomeEditor';
-import SettingsPage from './pages/teacher/SettingsPage';
-import QuizResults from './pages/teacher/QuizResults';
-import TeacherFeedback from './pages/teacher/Feedback';
-
 import { AuthProvider } from './contexts/AuthContext';
 import { CourseProvider } from './contexts/CourseContext';
-import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import UpdatePasswordPage from './pages/UpdatePasswordPage';
+
+// Lazy: every page body. Students never download teacher pages (or the heavy
+// react-quill editor inside them) and vice-versa — each route is its own chunk.
+const StudentDashboard = lazy(() => import('./pages/student/Dashboard'));
+const WelcomePage = lazy(() => import('./pages/student/WelcomePage'));
+const LektionView = lazy(() => import('./pages/student/LektionView'));
+const QuizView = lazy(() => import('./pages/student/QuizView'));
+const Library = lazy(() => import('./pages/student/Library'));
+const Profile = lazy(() => import('./pages/student/Profile'));
+const InstallGuide = lazy(() => import('./pages/student/InstallGuide'));
+const FeedbackPage = lazy(() => import('./pages/student/Feedback'));
+
+const CourseEditor = lazy(() => import('./pages/teacher/CourseEditor'));
+const Students = lazy(() => import('./pages/teacher/Students'));
+const ManageLibrary = lazy(() => import('./pages/teacher/ManageLibrary'));
+const ManageWellen = lazy(() => import('./pages/teacher/ManageWellen'));
+const WelcomeEditor = lazy(() => import('./pages/teacher/WelcomeEditor'));
+const SettingsPage = lazy(() => import('./pages/teacher/SettingsPage'));
+const QuizResults = lazy(() => import('./pages/teacher/QuizResults'));
+const TeacherFeedback = lazy(() => import('./pages/teacher/Feedback'));
+
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const UpdatePasswordPage = lazy(() => import('./pages/UpdatePasswordPage'));
+
+// Shown only while a route chunk is in flight (usually a few hundred ms).
+function RouteFallback() {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-vastu-light">
+            <Loader2 className="animate-spin text-vastu-gold" size={40} />
+        </div>
+    );
+}
 
 function App() {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -57,6 +74,7 @@ function App() {
         <AuthProvider>
             <CourseProvider>
                 <Router>
+                    <Suspense fallback={<RouteFallback />}>
                     <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
@@ -113,6 +131,7 @@ function App() {
                         }
                     />
                     </Routes>
+                    </Suspense>
                 </Router>
             </CourseProvider>
         </AuthProvider>
