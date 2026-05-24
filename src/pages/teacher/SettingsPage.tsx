@@ -391,16 +391,16 @@ export default function SettingsPage() {
                         <div className="pt-2 border-t border-vastu-sand/30">
                             <label className="block text-sm font-sans font-medium text-vastu-dark mt-4 mb-1.5 flex items-center gap-2">
                                 <Map size={16} className="text-vastu-gold" />
-                                Vastu Karte Erstellung Link
+                                Astro Karte berechnen
                             </label>
                             <input
                                 type="url"
                                 value={vastuMapLink}
                                 onChange={(e) => setVastuMapLink(e.target.value)}
-                                placeholder="https://www.vastusphere.net"
+                                placeholder="https://…"
                                 className="w-full px-4 py-3 bg-white border border-vastu-sand rounded-xl focus:ring-2 focus:ring-vastu-gold/40 focus:border-vastu-gold transition-all outline-none font-body text-base"
                             />
-                            <p className="text-xs text-vastu-text-light mt-1.5 italic">Standard: https://www.vastusphere.net</p>
+                            <p className="text-xs text-vastu-text-light mt-1.5 italic">Link zum Tool für die Berechnung der Astro-Karte.</p>
                         </div>
 
                         <div className="pt-2 border-t border-vastu-sand/30">

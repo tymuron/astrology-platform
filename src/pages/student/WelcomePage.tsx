@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getVideoEmbedUrl, navigateBackOr } from '../../lib/utils';
 import VimeoPlayer from '../../components/VimeoPlayer';
-import { AstrologyChartWheel, StarMark } from '../../components/AstrologyChartWheel';
+import { StarMark } from '../../components/AstrologyChartWheel';
 import { CalendarEvent, CourseSettings, UsefulLink } from '../../lib/types';
 
 function formatEventDate(iso: string): string {
@@ -139,12 +139,18 @@ export default function WelcomePage() {
                     }}
                 />
 
-                {/* Chart wheel inside cream panel (desktop) */}
+                {/* Chart wheel inside cream panel (desktop) — Maria's preferred Masterclass artwork */}
                 <div
                     className="hidden lg:block absolute"
                     style={{ right: '60px', top: '50%', transform: 'translateY(-50%)' }}
                 >
-                    <AstrologyChartWheel size={560} color="#2d3c38" />
+                    <img
+                        src="/astro-wheel.png"
+                        alt="Astro-Karte"
+                        width={560}
+                        height={560}
+                        style={{ display: 'block' }}
+                    />
                 </div>
 
                 {/* Subtle ambient blurs to soften the green canvas */}
