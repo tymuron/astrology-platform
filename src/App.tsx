@@ -2,16 +2,17 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-// Eager: entry point + shared layout shells. These are needed for the very
-// first paint on any route, so code-splitting them would only add a flash.
+// Eager: entry point + shared layout shells + LoginPage (the very first
+// route a fresh visitor lands on — lazy here would mean an extra Suspense
+// round-trip to render the login form, which is already in the critical path).
 import LoginPage from './pages/LoginPage';
 import StudentLayout from './components/layout/StudentLayout';
 import TeacherLayout from './components/layout/TeacherLayout';
 import { AuthProvider } from './contexts/AuthContext';
 import { CourseProvider } from './contexts/CourseContext';
 
-// Lazy: every page body. Students never download teacher pages (or the heavy
-// react-quill editor inside them) and vice-versa — each route is its own chunk.
+// Lazy: every other page body. Students never download teacher pages (or
+// the heavy react-quill editor inside them) and vice-versa.
 const StudentDashboard = lazy(() => import('./pages/student/Dashboard'));
 const WelcomePage = lazy(() => import('./pages/student/WelcomePage'));
 const LektionView = lazy(() => import('./pages/student/LektionView'));
