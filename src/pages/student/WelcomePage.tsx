@@ -159,6 +159,22 @@ export default function WelcomePage() {
 
                 {/* LEFT type column */}
                 <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-16 lg:py-28 flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] lg:w-[60%] lg:ml-0">
+                    {/* Mobile wheel — opens the hero, large, clips past the right edge.
+                        Dashed orbit ring extends behind. Hidden on lg (desktop has the
+                        full wheel in the right cream panel). */}
+                    <div className="lg:hidden relative -mx-6 sm:-mx-10 -mt-10 mb-8 animate-fade-in">
+                        <div
+                            className="absolute pointer-events-none rounded-full border border-dashed border-vastu-gold/25"
+                            style={{ width: '620px', height: '620px', top: '-90px', left: '30px' }}
+                        />
+                        <img
+                            src="/astro-wheel.png"
+                            alt="Astro-Karte"
+                            className="relative block"
+                            style={{ width: '460px', maxWidth: 'none', marginLeft: '30px' }}
+                        />
+                    </div>
+
                     {/* Eyebrow */}
                     <div className="flex items-center gap-4 mb-8 animate-fade-in">
                         <span className="block h-px w-9 bg-vastu-gold" />
