@@ -145,7 +145,7 @@ export default function WelcomePage() {
                     style={{ right: '60px', top: '50%', transform: 'translateY(-50%)' }}
                 >
                     <img
-                        src="/astro-wheel.png"
+                        src="/astro-wheel.webp"
                         alt="Astro-Karte"
                         width={560}
                         height={560}
@@ -168,7 +168,7 @@ export default function WelcomePage() {
                             style={{ width: '620px', height: '620px', top: '-90px', left: '30px' }}
                         />
                         <img
-                            src="/astro-wheel.png"
+                            src="/astro-wheel.webp"
                             alt="Astro-Karte"
                             className="relative block"
                             style={{ width: '460px', maxWidth: 'none', marginLeft: '30px' }}
