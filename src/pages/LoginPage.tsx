@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2, Eye, EyeOff, GraduationCap, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,16 +13,21 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const { isDemo, switchDemoRole, role, user, loading: authLoading } = useAuth();
 
-    // Redirect automatically if user and role are established
+    // Reactive redirect after sign-in (user/role arrive via state change).
+    // Must be declared before the early return below to satisfy Rules of Hooks.
     useEffect(() => {
         if (user && role && !loading && !authLoading) {
-            if (role === 'teacher') {
-                navigate('/teacher');
-            } else {
-                navigate('/student/welcome');
-            }
+            navigate(role === 'teacher' ? '/teacher' : '/student/welcome');
         }
     }, [user, role, loading, authLoading, navigate]);
+
+    // First-render redirect: if the cached/hydrated session already establishes
+    // identity by the time this renders, never show the login form at all
+    // (otherwise a returning user sees the form flash for one frame before
+    // the useEffect-based redirect kicks in).
+    if (!isDemo && user && role && !loading && !authLoading) {
+        return <Navigate to={role === 'teacher' ? '/teacher' : '/student/welcome'} replace />;
+    }
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
