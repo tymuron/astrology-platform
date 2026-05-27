@@ -28,13 +28,9 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => { });
-      });
-    }
-  </script>
+  <!-- Service worker registration removed: the old network-first SW caused
+       ~60s Safari stalls. /sw.js is now a kill-switch that unregisters
+       itself for existing visitors who still have the old one. -->
 </body>
 
 </html>
