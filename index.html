@@ -14,6 +14,21 @@
   <meta name="apple-mobile-web-app-title" content="Vedische Astrologie" />
   <link rel="manifest" href="/manifest.json" />
   <title>Holistische Vedische Astrologie</title>
+  <style>
+    /* Inline pre-paint loader — fills the white-flash gap while the JS bundle
+       downloads, parses and React mounts. Matches the login page's cream
+       backdrop so React's first paint blends in without a flash. */
+    html, body { margin: 0; background: #EFDECB; color: #475D57; }
+    #root { min-height: 100vh; }
+    .app-boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .app-boot__spinner {
+      width: 42px; height: 42px; border-radius: 50%;
+      border: 2px solid rgba(71,93,87,0.18);
+      border-top-color: #C5A97D;
+      animation: app-boot-spin 0.9s linear infinite;
+    }
+    @keyframes app-boot-spin { to { transform: rotate(360deg); } }
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style"
@@ -26,7 +41,11 @@
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div class="app-boot" aria-hidden="true">
+      <div class="app-boot__spinner"></div>
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
   <!-- Service worker registration removed: the old network-first SW caused
        ~60s Safari stalls. /sw.js is now a kill-switch that unregisters
