@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { UserRole } from '../lib/types';
 
 const PENDING_INVITE_KEY = 'astrology.pendingInvite';
+const ROLE_CACHE_KEY = 'astrology.cachedRole';
 
 async function tryRedeemPendingInvite() {
     if (typeof localStorage === 'undefined') return;
@@ -15,6 +16,32 @@ async function tryRedeemPendingInvite() {
     } else {
         console.warn('Pending invite redemption failed:', error.message);
     }
+}
+
+// Cache the resolved role so repeat visits flip `loading` to false instantly,
+// without waiting for the profile-fetch network round-trip. The cache is
+// keyed by user id so a session swap can't show the wrong role. Always
+// refreshed from the network in the background.
+function readCachedRole(userId: string): UserRole | null {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+        const raw = localStorage.getItem(ROLE_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed.userId === userId && (parsed.role === 'student' || parsed.role === 'teacher')
+            ? parsed.role
+            : null;
+    } catch { return null; }
+}
+
+function writeCachedRole(userId: string, role: UserRole) {
+    if (typeof localStorage === 'undefined') return;
+    try { localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify({ userId, role })); } catch { }
+}
+
+function clearCachedRole() {
+    if (typeof localStorage === 'undefined') return;
+    try { localStorage.removeItem(ROLE_CACHE_KEY); } catch { }
 }
 
 interface AuthContextType {
@@ -77,7 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             if (session?.user) {
-                setUser(session.user); // Set user first
+                setUser(session.user);
+                // Optimistic: if we cached this user's role on a previous
+                // visit, flip loading=false NOW so the UI is interactive
+                // immediately. fetchUserRole below refreshes in background.
+                const cached = readCachedRole(session.user.id);
+                if (cached) {
+                    setRole(cached);
+                    setLoading(false);
+                }
                 fetchUserRole(session.user.id);
             } else {
                 setLoading(false);
@@ -93,10 +128,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (event === 'SIGNED_IN') {
                     tryRedeemPendingInvite();
                 }
+                // Same optimistic path for re-auth events.
+                const cached = readCachedRole(session.user.id);
+                if (cached) {
+                    setRole(cached);
+                    setLoading(false);
+                }
                 fetchUserRole(session.user.id);
             } else {
                 setUser(null);
                 setRole(null);
+                clearCachedRole();
                 setLoading(false);
             }
         });
@@ -132,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else {
                 const fetchedRole = data?.role as UserRole || 'student';
                 setRole(fetchedRole);
+                writeCachedRole(userId, fetchedRole);
                 if (user) {
                     const updatedUser = { ...user, user_metadata: { ...user.user_metadata, ...data } };
                     setUser(updatedUser);
@@ -149,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!isPlaceholder) {
             await supabase.auth.signOut();
         }
+        clearCachedRole();
         setRole(null);
         setUser(null);
         setSession(null);
