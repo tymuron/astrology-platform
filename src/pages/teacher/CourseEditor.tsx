@@ -512,32 +512,25 @@ const ModulEditor = ({ modul, onDelete, onUpdate, onAddLektion, onMoveUp, onMove
                                         isFirst={index === 0}
                                         isLast={index === modul.days.length - 1}
                                         onMoveUp={async () => {
-                                            if (index > 0) {
-                                                const days = [...modul.days].sort((a, b) => a.order_index - b.order_index);
-                                                const prev = days[index - 1];
-                                                const curr = days[index];
-                                                // Use distinct indices to avoid swapping identical values
-                                                const prevIdx = Math.min(index - 1, prev.order_index);
-                                                const currIdx = Math.max(index, curr.order_index);
-                                                const newPrevIdx = prevIdx === currIdx ? currIdx + 1 : currIdx;
-                                                await supabase.from('days').update({ order_index: prevIdx }).eq('id', curr.id).select();
-                                                await supabase.from('days').update({ order_index: newPrevIdx }).eq('id', prev.id).select();
-                                                onUpdate();
-                                            }
+                                            if (index === 0) return;
+                                            // Swap with the lesson above, then renumber the whole
+                                            // list 0..n-1. Renumbering heals legacy ties (all the
+                                            // old order_index=99 rows) so ordering stays clean.
+                                            const ordered = [...modul.days];
+                                            [ordered[index - 1], ordered[index]] = [ordered[index], ordered[index - 1]];
+                                            await Promise.all(ordered.map((d, i) =>
+                                                supabase.from('days').update({ order_index: i }).eq('id', d.id)
+                                            ));
+                                            onUpdate();
                                         }}
                                         onMoveDown={async () => {
-                                            if (index < modul.days.length - 1) {
-                                                const days = [...modul.days].sort((a, b) => a.order_index - b.order_index);
-                                                const next = days[index + 1];
-                                                const curr = days[index];
-                                                // Use distinct indices to avoid swapping identical values
-                                                const currIdx = Math.min(index, curr.order_index);
-                                                const nextIdx = Math.max(index + 1, next.order_index);
-                                                const newCurrIdx = currIdx === nextIdx ? nextIdx + 1 : nextIdx;
-                                                await supabase.from('days').update({ order_index: newCurrIdx }).eq('id', curr.id).select();
-                                                await supabase.from('days').update({ order_index: currIdx }).eq('id', next.id).select();
-                                                onUpdate();
-                                            }
+                                            if (index >= modul.days.length - 1) return;
+                                            const ordered = [...modul.days];
+                                            [ordered[index], ordered[index + 1]] = [ordered[index + 1], ordered[index]];
+                                            await Promise.all(ordered.map((d, i) =>
+                                                supabase.from('days').update({ order_index: i }).eq('id', d.id)
+                                            ));
+                                            onUpdate();
                                         }}
                                     />
                                 ))}
@@ -611,13 +604,21 @@ export default function CourseEditor() {
             if (error) throw error;
 
             if (data) {
-                const sorted: Modul[] = data.map((w: any) => ({
+                // Stable ordering: by order_index, then created_at as tiebreak.
+                // Legacy lessons were all inserted at order_index 99 (tie), so
+                // without the tiebreak they shuffled between loads and newer
+                // ones could appear above older ones. created_at puts the
+                // newest at the bottom, which is what the teacher expects.
+                const byOrder = (a: any, b: any) =>
+                    (a.order_index - b.order_index) ||
+                    String(a.created_at || '').localeCompare(String(b.created_at || ''));
+                const sorted: Modul[] = [...data].sort(byOrder).map((w: any) => ({
                     id: w.id,
                     title: w.title,
                     description: w.description,
                     order_index: w.order_index,
                     available_from: w.available_from,
-                    days: w.days.sort((a: any, b: any) => a.order_index - b.order_index).map((d: any) => ({
+                    days: [...w.days].sort(byOrder).map((d: any) => ({
                         id: d.id,
                         title: d.title,
                         description: d.description,
@@ -649,9 +650,14 @@ export default function CourseEditor() {
         }
         const title = window.prompt('Modulname:');
         if (!title) return;
+        // Append at the bottom: next index = max existing + 1. (length+1 broke
+        // after deletes/reorders, dropping new modules into the middle.)
+        const nextIndex = modules.length > 0
+            ? Math.max(...modules.map(m => m.order_index)) + 1
+            : 0;
         const { error } = await supabase
             .from('weeks')
-            .insert([{ title, order_index: modules.length + 1, course_id: activeCourseId }]);
+            .insert([{ title, order_index: nextIndex, course_id: activeCourseId }]);
         if (error) {
             alert('Fehler beim Erstellen des Moduls: ' + error.message);
             return;
@@ -668,7 +674,14 @@ export default function CourseEditor() {
     const handleAddLektion = async (modulId: string) => {
         const title = window.prompt('Lektionsname:');
         if (!title) return;
-        const { error } = await supabase.from('days').insert([{ week_id: modulId, title, order_index: 99 }]);
+        // Append at the bottom: next index = max existing + 1. (Hardcoding 99
+        // made every new lesson tie, so newer ones sorted above older ones —
+        // the "flies up" bug. This guarantees it lands last.)
+        const modul = modules.find(m => m.id === modulId);
+        const nextIndex = modul && modul.days.length > 0
+            ? Math.max(...modul.days.map(d => d.order_index)) + 1
+            : 0;
+        const { error } = await supabase.from('days').insert([{ week_id: modulId, title, order_index: nextIndex }]);
         if (error) {
             alert('Fehler beim Erstellen der Lektion: ' + error.message);
         } else {
@@ -720,28 +733,24 @@ export default function CourseEditor() {
                         onUpdate={fetchModules}
                         onAddLektion={() => handleAddLektion(modul.id)}
                         onMoveUp={async () => {
-                            if (index > 0) {
-                                const prev = modules[index - 1];
-                                const curr = modules[index];
-                                const prevIdx = Math.min(index - 1, prev.order_index);
-                                const currIdx = Math.max(index, curr.order_index);
-                                const newPrevIdx = prevIdx === currIdx ? currIdx + 1 : currIdx;
-                                await supabase.from('weeks').update({ order_index: prevIdx }).eq('id', curr.id).select();
-                                await supabase.from('weeks').update({ order_index: newPrevIdx }).eq('id', prev.id).select();
-                                fetchModules();
-                            }
+                            if (index === 0) return;
+                            // Swap with the module above, then renumber 0..n-1
+                            // to heal any legacy ties (length+1 collisions).
+                            const ordered = [...modules];
+                            [ordered[index - 1], ordered[index]] = [ordered[index], ordered[index - 1]];
+                            await Promise.all(ordered.map((m, i) =>
+                                supabase.from('weeks').update({ order_index: i }).eq('id', m.id)
+                            ));
+                            fetchModules();
                         }}
                         onMoveDown={async () => {
-                            if (index < modules.length - 1) {
-                                const next = modules[index + 1];
-                                const curr = modules[index];
-                                const currIdx = Math.min(index, curr.order_index);
-                                const nextIdx = Math.max(index + 1, next.order_index);
-                                const newCurrIdx = currIdx === nextIdx ? nextIdx + 1 : nextIdx;
-                                await supabase.from('weeks').update({ order_index: newCurrIdx }).eq('id', curr.id).select();
-                                await supabase.from('weeks').update({ order_index: currIdx }).eq('id', next.id).select();
-                                fetchModules();
-                            }
+                            if (index >= modules.length - 1) return;
+                            const ordered = [...modules];
+                            [ordered[index], ordered[index + 1]] = [ordered[index + 1], ordered[index]];
+                            await Promise.all(ordered.map((m, i) =>
+                                supabase.from('weeks').update({ order_index: i }).eq('id', m.id)
+                            ));
+                            fetchModules();
                         }}
                         isFirst={index === 0}
                         isLast={index === modules.length - 1}

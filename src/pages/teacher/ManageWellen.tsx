@@ -199,11 +199,14 @@ export default function ManageWellen() {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
             .slice(0, 60) + '-' + Date.now().toString(36).slice(-4);
+        const nextIndex = courses.length > 0
+            ? Math.max(...courses.map(c => c.order_index)) + 1
+            : 0;
         const { error } = await supabase.from('courses').insert([{
             slug,
             title: formTitle.trim(),
             description: formDesc.trim() || null,
-            order_index: courses.length + 1,
+            order_index: nextIndex,
             is_active: true,
         }]);
         if (error) { alert('Fehler: ' + error.message); return; }
