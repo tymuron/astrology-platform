@@ -134,11 +134,13 @@ export function useLektion(moduleId: string | undefined, lektionId: string | und
 
             if (dayError) throw dayError;
 
+            // Order by created_at only (always present). Video ordering by
+            // order_index is applied client-side in LektionView, so this query
+            // stays safe even before the materials.order_index migration runs.
             const { data: matData } = await supabase
                 .from('materials')
                 .select('*')
                 .eq('day_id', lektionId)
-                .order('order_index', { ascending: true })
                 .order('created_at', { ascending: true });
 
             const { data: { user } } = await supabase.auth.getUser();
