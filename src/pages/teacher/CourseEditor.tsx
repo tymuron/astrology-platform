@@ -16,6 +16,7 @@ interface Material {
     week_id?: string;
     day_id?: string;
     is_homework?: boolean;
+    order_index?: number;
 }
 
 interface Lektion {
@@ -57,6 +58,9 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
     const [saving, setSaving] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+    const [newVideoUrl, setNewVideoUrl] = useState('');
+    const [newVideoTitle, setNewVideoTitle] = useState('');
+    const [addingVideo, setAddingVideo] = useState(false);
 
     useEffect(() => {
         setLocal(lektion);
@@ -118,6 +122,35 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
 
     const lessonMaterials = lektion.materials?.filter(m => !m.is_homework) || [];
     const homeworkMaterials = lektion.materials?.filter(m => m.is_homework) || [];
+    // Extra videos (besides the primary Vimeo field) are stored as video-type
+    // materials. Keep them out of the generic "Materialien" list and show them
+    // in their own "Weitere Videos" section, ordered by order_index.
+    const extraVideos = lessonMaterials
+        .filter(m => m.type === 'video')
+        .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const fileMaterials = lessonMaterials.filter(m => m.type !== 'video');
+
+    const handleAddVideo = async () => {
+        const url = newVideoUrl.trim();
+        if (!url) return;
+        setAddingVideo(true);
+        const nextOrder = extraVideos.length > 0
+            ? Math.max(...extraVideos.map(m => m.order_index ?? 0)) + 1
+            : 0;
+        const title = newVideoTitle.trim() || `Video ${extraVideos.length + 1}`;
+        const { error } = await supabase.from('materials').insert([{
+            title, type: 'video', url, day_id: lektion.id, week_id: moduleId,
+            is_homework: false, order_index: nextOrder,
+        }]);
+        setAddingVideo(false);
+        if (error) {
+            alert('Fehler beim Hinzufügen des Videos: ' + error.message);
+            return;
+        }
+        setNewVideoUrl('');
+        setNewVideoTitle('');
+        onUpdate();
+    };
 
     const modules = {
         toolbar: [
@@ -191,9 +224,9 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
                         />
                     </div>
 
-                    {/* Vimeo URL */}
+                    {/* Vimeo URL — primary video */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Vimeo-Video</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Hauptvideo (Vimeo)</label>
                         <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                             <Video size={16} className="text-blue-400" />
                             <input
@@ -204,6 +237,47 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
                                 placeholder="https://vimeo.com/123456789 oder https://player.vimeo.com/video/123456789"
                             />
                         </div>
+                    </div>
+
+                    {/* Additional videos — stored as video-type materials */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Weitere Videos</label>
+                        {extraVideos.length > 0 && (
+                            <div className="space-y-2 mb-2">
+                                {extraVideos.map(m => (
+                                    <div key={m.id} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                                        <Video size={15} className="text-blue-400 flex-shrink-0" />
+                                        <span className="font-medium text-gray-700 flex-shrink-0">{m.title}</span>
+                                        <span className="truncate text-gray-400 flex-1">{m.url}</span>
+                                        <button onClick={() => handleDeleteMaterial(m.id)} className="text-gray-400 hover:text-red-500 flex-shrink-0" title="Video entfernen"><X size={14} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                                type="text"
+                                value={newVideoUrl}
+                                onChange={(e) => setNewVideoUrl(e.target.value)}
+                                className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-vastu-accent"
+                                placeholder="Video-URL (Vimeo/YouTube/MP4)"
+                            />
+                            <input
+                                type="text"
+                                value={newVideoTitle}
+                                onChange={(e) => setNewVideoTitle(e.target.value)}
+                                className="sm:w-40 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-vastu-accent"
+                                placeholder="Titel (optional)"
+                            />
+                            <button
+                                onClick={handleAddVideo}
+                                disabled={!newVideoUrl.trim() || addingVideo}
+                                className="px-4 py-2 bg-vastu-dark text-white rounded-lg text-sm hover:bg-vastu-dark-deep transition-colors disabled:opacity-40 flex items-center justify-center gap-1 flex-shrink-0"
+                            >
+                                {addingVideo ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Video
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">Mehrere Videos erscheinen für Studenten unter dem Hauptvideo, in dieser Reihenfolge.</p>
                     </div>
 
                     {/* Homework Section */}
@@ -279,7 +353,7 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
             <div className="mt-4 pt-4 border-t border-gray-100">
                 <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Materialien zur Lektion</h5>
                 <div className="space-y-2 mb-3">
-                    {lessonMaterials.map(m => (
+                    {fileMaterials.map(m => (
                         <div key={m.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200 text-sm">
                             <span className="truncate flex-1">{m.title}</span>
                             <button onClick={() => handleDeleteMaterial(m.id)} className="text-gray-400 hover:text-red-500"><X size={14} /></button>

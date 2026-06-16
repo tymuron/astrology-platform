@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, Navigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
@@ -24,6 +24,8 @@ export default function RegisterPage() {
     const [fullName, setFullName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [joinError, setJoinError] = useState<string | null>(null);
+    const redeemAttempted = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -46,6 +48,25 @@ export default function RegisterPage() {
         check();
         return () => { cancelled = true; };
     }, [inviteToken]);
+
+    // Logged-in user opened a VALID invite link (e.g. an existing student joining
+    // a new wave). Don't show the signup form (signUp would fail — they already
+    // have an account). Redeem the invite for the current user and go in.
+    // redeem_invite is idempotent (on conflict do nothing), so an already-entitled
+    // student is handled cleanly too.
+    useEffect(() => {
+        if (!user || invite.status !== 'valid' || redeemAttempted.current) return;
+        redeemAttempted.current = true;
+        (async () => {
+            const { error: redeemError } = await supabase.rpc('redeem_invite', { invite_token: invite.token });
+            if (redeemError) {
+                setJoinError(redeemError.message);
+                redeemAttempted.current = false;
+                return;
+            }
+            navigate(role === 'teacher' ? '/teacher' : '/student/welcome');
+        })();
+    }, [user, invite, role, navigate]);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -91,9 +112,32 @@ export default function RegisterPage() {
         );
     }
 
-    // Already logged in and not actively redeeming a fresh invite → this is an
-    // existing student who opened an old /register bookmark. Send her straight
-    // into her course instead of the "EINLADUNG NÖTIG" dead-end.
+    // Logged in + VALID invite → the effect above redeems it and redirects.
+    // Show a spinner (or an error if redemption failed) instead of the signup form.
+    if (user && invite.status === 'valid') {
+        if (joinError) {
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-vastu-cream p-4">
+                    <div className="glass-card rounded-2xl p-8 max-w-md text-center">
+                        <p className="text-vastu-text-light font-body mb-6">
+                            Der Kurszugang konnte nicht aktiviert werden: {joinError}
+                        </p>
+                        <Link to="/student/welcome" className="inline-block bg-vastu-dark text-white px-6 py-3 rounded-xl font-sans font-medium hover:bg-vastu-dark-deep transition-all">
+                            Zu meinem Kurs
+                        </Link>
+                    </div>
+                </div>
+            );
+        }
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-vastu-cream">
+                <Loader2 className="animate-spin text-vastu-dark" size={32} />
+            </div>
+        );
+    }
+
+    // Already logged in with no usable invite → existing student who opened an old
+    // /register bookmark. Send her straight into her course (no "invite required" wall).
     if (user && invite.status !== 'valid') {
         return <Navigate to={role === 'teacher' ? '/teacher' : '/student/welcome'} replace />;
     }

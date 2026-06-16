@@ -161,7 +161,9 @@ export default function LektionView() {
     }
 
     const pdfMaterials = lektion.materials.filter(m => m.type === 'pdf');
-    const videoMaterials = lektion.materials.filter(m => m.type === 'video');
+    const videoMaterials = lektion.materials
+        .filter(m => m.type === 'video')
+        .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
 
     const parsedLinks = lektion.materials
         .filter(m => m.type === 'link')

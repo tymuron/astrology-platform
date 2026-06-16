@@ -137,7 +137,9 @@ export function useLektion(moduleId: string | undefined, lektionId: string | und
             const { data: matData } = await supabase
                 .from('materials')
                 .select('*')
-                .eq('day_id', lektionId);
+                .eq('day_id', lektionId)
+                .order('order_index', { ascending: true })
+                .order('created_at', { ascending: true });
 
             const { data: { user } } = await supabase.auth.getUser();
 
@@ -163,6 +165,8 @@ export function useLektion(moduleId: string | undefined, lektionId: string | und
                         title: m.title,
                         type: m.type,
                         url: m.url,
+                        isHomework: m.is_homework,
+                        orderIndex: m.order_index,
                     })),
                 });
             }

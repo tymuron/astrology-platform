@@ -25,7 +25,7 @@ function formatEventDate(iso: string): string {
 
 export default function WelcomePage() {
     const { user, signOut, loading, role, isDemo } = useAuth();
-    const { activeCourseId, courses } = useCourseContext();
+    const { activeCourseId, courses, loading: coursesLoading } = useCourseContext();
     const navigate = useNavigate();
     const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Teilnehmer';
     const { modules } = useModules();
@@ -91,6 +91,29 @@ export default function WelcomePage() {
     if (loading) return <div className="min-h-screen bg-vastu-dark-deep flex items-center justify-center"><Loader2 className="animate-spin text-vastu-gold" size={40} /></div>;
     if (!user) return <Navigate to="/login" replace />;
     if (role === 'teacher') return <Navigate to="/teacher" replace />;
+
+    // Student with no course access (e.g. access revoked, or not yet granted).
+    // Show a clear message instead of an empty/broken welcome screen.
+    if (!isDemo && role === 'student' && !coursesLoading && courses.length === 0) {
+        return (
+            <div className="min-h-screen bg-vastu-light flex items-center justify-center p-6">
+                <div className="bg-white rounded-2xl border border-vastu-sand/50 shadow-sm p-10 max-w-lg w-full text-center">
+                    <h1 className="font-serif text-2xl text-vastu-dark mb-3">Kein Kurszugang</h1>
+                    <p className="text-vastu-text-light font-body leading-relaxed mb-6">
+                        Du hast aktuell keinen Zugang zu einem Kurs. Sobald deine Mentorin dich
+                        freischaltet, erscheint dein Kurs hier automatisch. Bei Fragen wende dich
+                        bitte an deine Mentorin.
+                    </p>
+                    <button
+                        onClick={() => signOut()}
+                        className="inline-block bg-vastu-dark text-white px-6 py-3 rounded-xl font-sans font-medium hover:bg-vastu-dark-deep transition-colors"
+                    >
+                        Abmelden
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-vastu-light">

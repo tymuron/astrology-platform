@@ -17,6 +17,7 @@ export interface Material {
     url: string;
     description?: string;
     isHomework?: boolean;
+    orderIndex?: number;
 }
 
 export interface Lektion {
