@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Navigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const PENDING_INVITE_KEY = 'astrology.pendingInvite';
 
@@ -15,6 +16,7 @@ export default function RegisterPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const inviteToken = searchParams.get('invite');
+    const { user, role, loading: authLoading } = useAuth();
 
     const [invite, setInvite] = useState<InviteState>({ status: 'checking' });
     const [email, setEmail] = useState('');
@@ -81,7 +83,7 @@ export default function RegisterPage() {
         }
     };
 
-    if (invite.status === 'checking') {
+    if (authLoading || invite.status === 'checking') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-vastu-cream">
                 <Loader2 className="animate-spin text-vastu-dark" size={32} />
@@ -89,11 +91,22 @@ export default function RegisterPage() {
         );
     }
 
-    if (invite.status === 'missing' || invite.status === 'invalid') {
-        const message =
-            invite.status === 'missing'
-                ? 'Die Registrierung ist nur per Einladungslink möglich. Bitte wende dich an deine Mentorin, um eine Einladung zu erhalten.'
-                : `Dieser Einladungslink funktioniert nicht: ${invite.reason}`;
+    // Already logged in and not actively redeeming a fresh invite → this is an
+    // existing student who opened an old /register bookmark. Send her straight
+    // into her course instead of the "EINLADUNG NÖTIG" dead-end.
+    if (user && invite.status !== 'valid') {
+        return <Navigate to={role === 'teacher' ? '/teacher' : '/student/welcome'} replace />;
+    }
+
+    // Not logged in, no invite token → almost always an existing student using
+    // the pre-invite registration link. Send her to login (she has an account)
+    // rather than a scary "invitation required" wall.
+    if (!user && invite.status === 'missing') {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (invite.status === 'invalid') {
+        const message = `Dieser Einladungslink funktioniert nicht: ${invite.reason}`;
 
         return (
             <div className="min-h-screen flex items-center justify-center bg-vastu-cream p-4 relative overflow-hidden">
@@ -104,10 +117,13 @@ export default function RegisterPage() {
                         <div className="w-[72px] h-[72px] mx-auto rounded-full border-2 border-vastu-dark/30 flex items-center justify-center mb-5">
                             <span className="font-script text-vastu-dark text-4xl leading-none mt-1">A</span>
                         </div>
-                        <h1 className="text-2xl font-serif tracking-[0.10em] text-vastu-dark">EINLADUNG NÖTIG</h1>
+                        <h1 className="text-2xl font-serif tracking-[0.10em] text-vastu-dark">LINK UNGÜLTIG</h1>
                     </div>
                     <div className="glass-card rounded-2xl p-8 text-center">
                         <p className="text-vastu-text-light font-body leading-relaxed mb-6">{message}</p>
+                        <p className="text-vastu-text-light font-body text-sm mb-6">
+                            Hast du bereits ein Konto? Dann melde dich einfach an.
+                        </p>
                         <Link
                             to="/login"
                             className="inline-block bg-vastu-dark text-white px-6 py-3 rounded-xl font-sans font-medium hover:bg-vastu-dark-deep transition-all shadow-lg shadow-vastu-dark/20"
@@ -118,6 +134,12 @@ export default function RegisterPage() {
                 </div>
             </div>
         );
+    }
+
+    // Catch-all: only a valid invite reaches the registration form. (Also
+    // narrows the type so invite.courseTitle is accessible below.)
+    if (invite.status !== 'valid') {
+        return <Navigate to="/login" replace />;
     }
 
     return (
