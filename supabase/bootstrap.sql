@@ -55,13 +55,41 @@ drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
   on public.profiles for insert with check (auth.uid() = id);
 
+-- Self-update allowed, but profiles.role must not be self-escalatable
+-- (privilege escalation). Enforced by the WITH CHECK + the
+-- trg_enforce_role_change trigger below.
 drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
-  on public.profiles for update using (auth.uid() = id);
+  on public.profiles for update
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 drop policy if exists "Teachers can update any profile" on public.profiles;
 create policy "Teachers can update any profile"
-  on public.profiles for update using (public.get_user_role() = 'teacher');
+  on public.profiles for update
+  using (public.get_user_role() = 'teacher')
+  with check (public.get_user_role() = 'teacher');
+
+create or replace function public.enforce_role_change_teacher_only()
+returns trigger
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if new.role is distinct from old.role then
+    if auth.uid() is not null
+       and coalesce(public.get_user_role(), '') <> 'teacher' then
+      raise exception 'Rollenänderung ist nicht erlaubt';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_enforce_role_change on public.profiles;
+create trigger trg_enforce_role_change
+  before update on public.profiles
+  for each row execute function public.enforce_role_change_teacher_only();
 
 -- Auto-create profile when a new auth user is added.
 create or replace function public.handle_new_user()

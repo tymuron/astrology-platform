@@ -39,8 +39,40 @@ create policy "Teachers can view all profiles"
 create policy "Users can insert their own profile."
   on profiles for insert with check ( auth.uid() = id );
 
+-- Self-update is allowed, but profiles.role must NOT be changeable by a
+-- non-teacher (it would be a privilege escalation — role is the master key).
+-- The WITH CHECK plus the trg_enforce_role_change trigger (see
+-- migrations/20260616_fix_profiles_role_escalation.sql) enforce this.
 create policy "Users can update own profile."
-  on profiles for update using ( auth.uid() = id );
+  on profiles for update
+  using ( auth.uid() = id )
+  with check ( auth.uid() = id );
+
+create policy "Teachers can update any profile"
+  on profiles for update
+  using ( public.get_user_role() = 'teacher' )
+  with check ( public.get_user_role() = 'teacher' );
+
+create or replace function public.enforce_role_change_teacher_only()
+returns trigger
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if new.role is distinct from old.role then
+    if auth.uid() is not null
+       and coalesce(public.get_user_role(), '') <> 'teacher' then
+      raise exception 'Rollenänderung ist nicht erlaubt';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_enforce_role_change on public.profiles;
+create trigger trg_enforce_role_change
+  before update on public.profiles
+  for each row execute function public.enforce_role_change_teacher_only();
 
 
 -- 2. WEEKS
