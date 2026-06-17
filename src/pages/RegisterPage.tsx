@@ -24,7 +24,6 @@ export default function RegisterPage() {
     const [fullName, setFullName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [joinError, setJoinError] = useState<string | null>(null);
     const redeemAttempted = useRef(false);
 
     useEffect(() => {
@@ -49,21 +48,16 @@ export default function RegisterPage() {
         return () => { cancelled = true; };
     }, [inviteToken]);
 
-    // Logged-in user opened a VALID invite link (e.g. an existing student joining
-    // a new wave). Don't show the signup form (signUp would fail — they already
-    // have an account). Redeem the invite for the current user and go in.
-    // redeem_invite is idempotent (on conflict do nothing), so an already-entitled
-    // student is handled cleanly too.
+    // Logged-in user opened a VALID invite link (e.g. an existing student
+    // re-opening the link, or joining a new wave). Try to redeem (idempotent),
+    // but NEVER hard-lock them on this path: if redeem fails for any reason,
+    // still send them into the app — they are authenticated and most likely
+    // already have access.
     useEffect(() => {
         if (!user || invite.status !== 'valid' || redeemAttempted.current) return;
         redeemAttempted.current = true;
         (async () => {
-            const { error: redeemError } = await supabase.rpc('redeem_invite', { invite_token: invite.token });
-            if (redeemError) {
-                setJoinError(redeemError.message);
-                redeemAttempted.current = false;
-                return;
-            }
+            await supabase.rpc('redeem_invite', { invite_token: invite.token });
             navigate(role === 'teacher' ? '/teacher' : '/student/welcome');
         })();
     }, [user, invite, role, navigate]);
@@ -112,23 +106,9 @@ export default function RegisterPage() {
         );
     }
 
-    // Logged in + VALID invite → the effect above redeems it and redirects.
-    // Show a spinner (or an error if redemption failed) instead of the signup form.
+    // Logged in + VALID invite → the effect above redeems (best effort) and
+    // redirects into the app. Just show a spinner; never a dead-end.
     if (user && invite.status === 'valid') {
-        if (joinError) {
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-vastu-cream p-4">
-                    <div className="glass-card rounded-2xl p-8 max-w-md text-center">
-                        <p className="text-vastu-text-light font-body mb-6">
-                            Der Kurszugang konnte nicht aktiviert werden: {joinError}
-                        </p>
-                        <Link to="/student/welcome" className="inline-block bg-vastu-dark text-white px-6 py-3 rounded-xl font-sans font-medium hover:bg-vastu-dark-deep transition-all">
-                            Zu meinem Kurs
-                        </Link>
-                    </div>
-                </div>
-            );
-        }
         return (
             <div className="min-h-screen flex items-center justify-center bg-vastu-cream">
                 <Loader2 className="animate-spin text-vastu-dark" size={32} />
