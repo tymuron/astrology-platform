@@ -157,6 +157,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((event, session) => {
+            // Password-reset link: Supabase sets a short-lived recovery session
+            // and fires PASSWORD_RECOVERY. If the link landed anywhere other than
+            // /update-password (e.g. the Site URL root because the redirect URL
+            // wasn't allow-listed), force the user to the password form before
+            // any "logged-in" redirect bounces them into the app.
+            if (event === 'PASSWORD_RECOVERY') {
+                if (window.location.pathname !== '/update-password') {
+                    window.history.replaceState({}, '', '/update-password');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                }
+            }
             setSession(session);
             if (session?.user) {
                 setUser(session.user);
