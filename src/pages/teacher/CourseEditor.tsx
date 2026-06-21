@@ -17,7 +17,46 @@ interface Material {
     day_id?: string;
     is_homework?: boolean;
     order_index?: number;
+    description?: string;
 }
+
+// One extra-video row in the "Weitere Videos" section: title + url + a
+// per-video description box that saves on blur (silent — no list refetch,
+// so editing stays smooth). Local state mirrors the prop.
+const ExtraVideoRow = ({ video, onDelete, onSaveDescription }: {
+    video: Material;
+    onDelete: (id: string) => void;
+    onSaveDescription: (id: string, description: string) => Promise<void>;
+}) => {
+    const [desc, setDesc] = useState(video.description || '');
+    const [savedTick, setSavedTick] = useState(false);
+    useEffect(() => { setDesc(video.description || ''); }, [video.description]);
+    const save = async () => {
+        if (desc === (video.description || '')) return;
+        await onSaveDescription(video.id, desc);
+        setSavedTick(true);
+        setTimeout(() => setSavedTick(false), 1500);
+    };
+    return (
+        <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+                <Video size={15} className="text-blue-400 flex-shrink-0" />
+                <span className="font-medium text-gray-700 flex-shrink-0">{video.title}</span>
+                <span className="truncate text-gray-400 flex-1">{video.url}</span>
+                {savedTick && <span className="text-green-600 text-xs flex-shrink-0">Gespeichert</span>}
+                <button onClick={() => onDelete(video.id)} className="text-gray-400 hover:text-red-500 flex-shrink-0" title="Video entfernen"><X size={14} /></button>
+            </div>
+            <textarea
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                onBlur={save}
+                rows={2}
+                placeholder="Beschreibung zu diesem Video (optional)"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-vastu-accent bg-white resize-y"
+            />
+        </div>
+    );
+};
 
 interface Lektion {
     id: string;
@@ -118,6 +157,12 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
         if (!window.confirm('Material löschen?')) return;
         const { error } = await supabase.from('materials').delete().eq('id', id);
         if (!error) onUpdate();
+    };
+
+    // Silent save of a per-video description (no list refetch — keeps editing smooth).
+    const handleSaveVideoDescription = async (id: string, description: string) => {
+        const { error } = await supabase.from('materials').update({ description }).eq('id', id);
+        if (error) alert('Fehler beim Speichern der Beschreibung: ' + error.message);
     };
 
     const lessonMaterials = lektion.materials?.filter(m => !m.is_homework) || [];
@@ -245,12 +290,12 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
                         {extraVideos.length > 0 && (
                             <div className="space-y-2 mb-2">
                                 {extraVideos.map(m => (
-                                    <div key={m.id} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                                        <Video size={15} className="text-blue-400 flex-shrink-0" />
-                                        <span className="font-medium text-gray-700 flex-shrink-0">{m.title}</span>
-                                        <span className="truncate text-gray-400 flex-1">{m.url}</span>
-                                        <button onClick={() => handleDeleteMaterial(m.id)} className="text-gray-400 hover:text-red-500 flex-shrink-0" title="Video entfernen"><X size={14} /></button>
-                                    </div>
+                                    <ExtraVideoRow
+                                        key={m.id}
+                                        video={m}
+                                        onDelete={handleDeleteMaterial}
+                                        onSaveDescription={handleSaveVideoDescription}
+                                    />
                                 ))}
                             </div>
                         )}

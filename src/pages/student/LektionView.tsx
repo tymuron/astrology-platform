@@ -253,6 +253,9 @@ export default function LektionView() {
                                             Dein Browser unterstützt dieses Video nicht.
                                         </video>
                                     )}
+                                    {mat.description && (
+                                        <p className="text-sm font-body text-vastu-text-light leading-relaxed mt-2 whitespace-pre-line">{mat.description}</p>
+                                    )}
                                 </div>
                             );
                         })}
