@@ -163,7 +163,10 @@ export default function LektionView() {
     const pdfMaterials = lektion.materials.filter(m => m.type === 'pdf');
     const videoMaterials = lektion.materials
         .filter(m => m.type === 'video')
-        .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+        .sort((a, b) =>
+            ((a.orderIndex ?? 0) - (b.orderIndex ?? 0)) ||
+            ((a.createdAt ? Date.parse(a.createdAt) : 0) - (b.createdAt ? Date.parse(b.createdAt) : 0))
+        );
 
     const parsedLinks = lektion.materials
         .filter(m => m.type === 'link')
@@ -237,7 +240,8 @@ export default function LektionView() {
                 {videoMaterials.length > 0 && (
                     <div className="px-6 md:px-8 pb-4 space-y-4">
                         {videoMaterials.map((mat) => {
-                            const isVimeo = mat.url.includes('vimeo.com');
+                            if (!mat.url) return null;
+                            const isVimeo = typeof mat.url === 'string' && mat.url.includes('vimeo.com');
                             return (
                                 <div key={mat.id}>
                                     <h4 className="text-sm font-serif font-medium text-vastu-dark mb-2">{mat.title}</h4>

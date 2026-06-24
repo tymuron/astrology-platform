@@ -170,6 +170,7 @@ export function useLektion(moduleId: string | undefined, lektionId: string | und
                         isHomework: m.is_homework,
                         orderIndex: m.order_index,
                         description: m.description,
+                        createdAt: m.created_at,
                     })),
                 });
             }

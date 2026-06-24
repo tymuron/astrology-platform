@@ -18,6 +18,7 @@ interface Material {
     is_homework?: boolean;
     order_index?: number;
     description?: string;
+    created_at?: string;
 }
 
 // One extra-video row in the "Weitere Videos" section: title + url + a
@@ -172,7 +173,10 @@ const LektionEditor = ({ lektion, moduleId, onDelete, onUpdate, onMoveUp, onMove
     // in their own "Weitere Videos" section, ordered by order_index.
     const extraVideos = lessonMaterials
         .filter(m => m.type === 'video')
-        .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+        .sort((a, b) =>
+            ((a.order_index ?? 0) - (b.order_index ?? 0)) ||
+            String(a.created_at || '').localeCompare(String(b.created_at || ''))
+        );
     const fileMaterials = lessonMaterials.filter(m => m.type !== 'video');
 
     const handleAddVideo = async () => {

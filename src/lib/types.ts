@@ -18,6 +18,7 @@ export interface Material {
     description?: string;
     isHomework?: boolean;
     orderIndex?: number;
+    createdAt?: string;
 }
 
 export interface Lektion {
