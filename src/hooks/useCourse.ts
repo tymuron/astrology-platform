@@ -71,7 +71,13 @@ export function useModules() {
                         availableFrom: w.available_from,
                         lektionen: w.days
                             .filter((d: any) => d.is_visible !== false)
-                            .sort((a: any, b: any) => a.order_index - b.order_index)
+                            // Stable order: order_index, then created_at, then id.
+                            // Lessons that share an order_index would otherwise
+                            // sort non-deterministically and reshuffle each load.
+                            .sort((a: any, b: any) =>
+                                ((a.order_index ?? 0) - (b.order_index ?? 0)) ||
+                                (Date.parse(a.created_at || 0) - Date.parse(b.created_at || 0)) ||
+                                String(a.id).localeCompare(String(b.id)))
                             .map((d: any) => ({
                                 id: d.id,
                                 title: d.title,
