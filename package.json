@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.86.0",
+        "@vimeo/player": "^2.30.4",
         "clsx": "^2.0.0",
         "dompurify": "^3.3.3",
         "dotenv": "^17.3.1",

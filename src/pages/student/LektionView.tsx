@@ -232,7 +232,7 @@ export default function LektionView() {
                 {/* Vimeo Video (from dedicated field) */}
                 {lektion.vimeoUrl && (
                     <div className="p-6 md:p-8">
-                        <VimeoPlayer url={lektion.vimeoUrl} />
+                        <VimeoPlayer url={lektion.vimeoUrl} videoKey={`day-${lektion.id}`} />
                     </div>
                 )}
 
@@ -246,7 +246,7 @@ export default function LektionView() {
                                 <div key={mat.id}>
                                     <h4 className="text-sm font-serif font-medium text-vastu-dark mb-2">{mat.title}</h4>
                                     {isVimeo ? (
-                                        <VimeoPlayer url={mat.url} title={mat.title} />
+                                        <VimeoPlayer url={mat.url} title={mat.title} videoKey={`mat-${mat.id}`} />
                                     ) : (
                                         <video
                                             controls
