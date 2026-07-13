@@ -89,7 +89,7 @@ function App() {
                     <Route path="/student" element={<StudentLayout />}>
                         <Route index element={<StudentDashboard />} />
                         <Route path="module/:moduleId/lektion/:lektionId" element={<LektionView />} />
-                        <Route path="module/:moduleId/quiz/:quizId" element={<QuizView />} />
+                        <Route path="module/:moduleId/quiz" element={<QuizView />} />
                         <Route path="library" element={<Library />} />
                         <Route path="profile" element={<Profile />} />
                         <Route path="install" element={<InstallGuide />} />
