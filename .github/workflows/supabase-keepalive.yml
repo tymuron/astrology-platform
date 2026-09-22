@@ -1,0 +1,51 @@
+name: Supabase keep-alive
+
+# The Supabase project behind this platform is on the free plan, which pauses
+# a project after 7 days without traffic. That took the platform down on
+# 2026-09-07 (students couldn't log in, no modules) until it was restored by
+# hand. A tiny daily query keeps it awake. If the query fails, GitHub emails
+# the repo owner, which doubles as an early warning.
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, 06:17 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/supabase-keepalive.yml]
+
+permissions:
+  contents: write # only for the empty keep-enabled commit below
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://bzougoqizsoiiehknyed.supabase.co
+      # Public anon key: the same one the live site ships to every browser.
+      # It can only do what Row Level Security allows anonymous visitors.
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6b3Vnb3FpenNvaWllaGtueWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTE2NDYsImV4cCI6MjA5NDA4NzY0Nn0.7bIquTP7qxeJ9cBdNEM897sPWKPeu0LkW97Cfaz9I5o
+    steps:
+      - name: Query the database
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-delay 20 --retry-all-errors \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/courses?select=id&limit=1"
+
+      - uses: actions/checkout@v5
+
+      - name: Keep this schedule from being auto-disabled
+        # GitHub switches off scheduled workflows in public repos after 60 days
+        # without a commit. Push an empty commit once the last one is 45+ days
+        # old; [skip render] stops Render from redeploying the site for it.
+        run: |
+          age_days=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          echo "Last commit: $age_days days ago"
+          if [ "$age_days" -ge 45 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "chore: keep Supabase keep-alive schedule enabled [skip render]"
+            git push
+          fi
